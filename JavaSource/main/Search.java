@@ -16,10 +16,6 @@ public class Search {
 	final String golGoToTicketsId = "s_4_1_4_0";
 	final String gol = "https://clientes.smiles.com.br/eloyalty_ptb/start.swe?SWECmd=GotoView&SWEView=Login%20View";
 	final String tam = "http://www.tam.com.br";
-	final String loginNameGol = "";
-	final String loginNameTam = "";
-	final String pswdNameGol = "";
-	final String psgdNameTam = "";
 
 	public Search() {
 	}
@@ -28,6 +24,7 @@ public class Search {
 		WebDriver driver = new FirefoxDriver();
 		loginPageGol(driver);
 		smilesPage(driver);
+		smilesSearchPage(driver);
 	}
 
 	public void SearchTam() {
@@ -50,9 +47,14 @@ public class Search {
 
 	private void smilesPage(WebDriver driver) {
 		WebDriverWait wait = new WebDriverWait(driver, 20);
-		wait.until(ExpectedConditions.refreshed(new WaitExistsId(golGoToTicketsId)));
-
+		navigateThroughInternalFramesSmiles(driver);
 		driver.findElement(By.id(golGoToTicketsId)).click();
+	}
+	
+	private void smilesSearchPage(WebDriver driver){
+		WebDriverWait wait = new WebDriverWait(driver, 20);
+		navigateThroughInternalFramesSearch(driver);
+		//TODO:Do the search here
 	}
 
 	private void loginPageTam(WebDriver driver) {
@@ -65,17 +67,24 @@ public class Search {
 
 	private WebDriver navigateThroughInternalFramesGol(WebDriver driver) {
 		driver = driver.switchTo().frame(0);// to the first frame
-		driver = driver.switchTo().frame("_swecontent"); // to the swecontent
-															// frame
+		driver = driver.switchTo().frame(1); // to the swecontent frame
 		driver = driver.switchTo().frame("_sweview"); // to the main view frame
 
 		return driver;
 	}
-	
+
 	private WebDriver navigateThroughInternalFramesSmiles(WebDriver driver) {
 		driver = driver.switchTo().frame(0);
-		driver = driver.switchTo().frame(0);											
+		driver = driver.switchTo().frame(1);
+		driver = driver.switchTo().frame("_sweview");
+
+		return driver;
+	}
+	
+	private WebDriver navigateThroughInternalFramesSearch(WebDriver driver) {
 		driver = driver.switchTo().frame(0);
+		driver = driver.switchTo().frame(1);
+		driver = driver.switchTo().frame("_sweview");
 
 		return driver;
 	}
@@ -108,5 +117,4 @@ public class Search {
 		// nameSplit.splitExtractListCities();
 
 	}
-
 }
