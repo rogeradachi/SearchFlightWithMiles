@@ -5,24 +5,6 @@
 	<packaging>war</packaging>
 	<version>1.0.0-SNAPSHOT</version>
 
-	<repositories>
-		<repository>
-			<id>psci</id>
-			<name>PagSeguro CI - Releases</name>
-			<url>http://pagseguro-ci/nexus/content/groups/public</url>
-		</repository>
-		<repository>
-			<id>uol</id>
-			<name>UOL - Releases</name>
-			<url>http://mvn.intranet/uol</url>
-		</repository>
-		<repository>
-			<id>uol-3rd</id>
-			<name>UOL 3rd - Releases</name>
-			<url>http://mvn.intranet/3rd</url>
-		</repository>
-	</repositories>
-
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.6</java.version>

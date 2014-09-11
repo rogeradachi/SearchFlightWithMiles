@@ -7,7 +7,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import conditional.WaitExistsId;
+import conditional.WaitPageLoad;
 
 public class Search {
 	final String golInputLoginId = "s_1_1_9_0";
@@ -16,6 +16,10 @@ public class Search {
 	final String golGoToTicketsId = "s_4_1_4_0";
 	final String gol = "https://clientes.smiles.com.br/eloyalty_ptb/start.swe?SWECmd=GotoView&SWEView=Login%20View";
 	final String tam = "http://www.tam.com.br";
+	final String loginNameGol = "";
+	final String loginNameTam = "";
+	final String pswdNameGol = "";
+	final String psgdNameTam = "";
 
 	public Search() {
 	}
@@ -35,34 +39,39 @@ public class Search {
 	private void loginPageGol(WebDriver driver) {
 		driver.get(gol);
 
-		WebDriverWait wait = new WebDriverWait(driver, 20);
-		driver = navigateThroughInternalFramesGol(driver);
-
-		wait.until(ExpectedConditions.refreshed(new WaitExistsId(golInputLoginId)));
-
+		waitPageLoaded(driver);
+		
+		navigateThroughInternalFramesGol(driver);
 		inputLogin(driver, loginNameGol, golInputLoginId);
 		inputPassWord(driver, pswdNameGol, golInputPswdId);
 		driver.findElement(By.id(golSubmitLoginId)).click();
 	}
 
 	private void smilesPage(WebDriver driver) {
-		WebDriverWait wait = new WebDriverWait(driver, 20);
+		waitPageLoaded(driver);
+		
 		navigateThroughInternalFramesSmiles(driver);
 		driver.findElement(By.id(golGoToTicketsId)).click();
 	}
 	
-	private void smilesSearchPage(WebDriver driver){
-		WebDriverWait wait = new WebDriverWait(driver, 20);
+	private void smilesSearchPage(WebDriver driver){		
+		waitPageLoaded(driver);
+		
 		navigateThroughInternalFramesSearch(driver);
 		//TODO:Do the search here
 	}
 
 	private void loginPageTam(WebDriver driver) {
 		driver.get(tam);
-
-		WebDriverWait wait = new WebDriverWait(driver, 20);
+		
+		waitPageLoaded(driver);
 
 		driver = navigateThroughInternalFramesTam(driver);
+	}
+	
+	private void waitPageLoaded(WebDriver driver){
+		WebDriverWait wait = new WebDriverWait(driver, 30);
+		wait.until(ExpectedConditions.refreshed(new WaitPageLoad()));
 	}
 
 	private WebDriver navigateThroughInternalFramesGol(WebDriver driver) {
@@ -83,8 +92,6 @@ public class Search {
 	
 	private WebDriver navigateThroughInternalFramesSearch(WebDriver driver) {
 		driver = driver.switchTo().frame(0);
-		driver = driver.switchTo().frame(1);
-		driver = driver.switchTo().frame("_sweview");
 
 		return driver;
 	}
