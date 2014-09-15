@@ -59,6 +59,11 @@ public class Search {
 		
 		navigateThroughInternalFramesSearch(driver);
 		//TODO:Do the search here
+		
+		//fs_popUp_origins[0]
+		//coloca a classe 'highlights'
+		//<div id="fs_popUp_origins[0]" class="fs_popUpClass airports" style="width: 206px; display: none;"><ul class="fs_innerPopUpClass"><li class="fs_elementLine highlight" value="CCS">Caracas (CCS)</li></ul></div>
+		//<div id="fs_popUp_destinations[0]" class="fs_popUpClass airports" style="width: 206px; display: none;"><ul class="fs_innerPopUpClass"><li class="fs_elementLine" value="SLZ">São Luis (SLZ)</li><li class="fs_elementLine" value="GRU">São Paulo - Guarulhos (GRU)</li><li class="fs_elementLine highlight" value="SAO">São Paulo - Todos os Aeroportos (SAO)</li></ul></div>
 	}
 
 	private void loginPageTam(WebDriver driver) {
@@ -78,7 +83,6 @@ public class Search {
 		driver = driver.switchTo().frame(0);// to the first frame
 		driver = driver.switchTo().frame(1); // to the swecontent frame
 		driver = driver.switchTo().frame("_sweview"); // to the main view frame
-
 		return driver;
 	}
 
