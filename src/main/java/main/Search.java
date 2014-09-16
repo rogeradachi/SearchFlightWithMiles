@@ -1,13 +1,19 @@
 package main;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import model.FlightDetails;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -17,7 +23,10 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import util.FileStream;
+import util.ParserFlight;
 import conditional.WaitPageLoad;
+import enums.Login;
 
 public class Search {
 	private final int oneWeek = 7;
@@ -33,8 +42,8 @@ public class Search {
 	private String loginNameTam;
 	private String pswdNameGol;
 	private String pswdNameTam;
-	private String origem = "SAO";
-	private String destino = "FLN";
+	private String from = "SAO";
+	private String to = "FLN";
 	private WebDriver driver;
 
 	private Calendar departureDate;
@@ -47,7 +56,7 @@ public class Search {
 	private int returnDay;
 	private String departureDayofWeek;
 	private String returnDayofWeek;
-	
+
 	private Map<String, String> login;
 
 	public Search() {
@@ -68,7 +77,17 @@ public class Search {
 		departureDate.set(departureYear, departureMonth, departureDay);
 		returnDate.set(returnYear, returnMonth, returnDay);
 		
-		readPersonalDetailsFromFile();
+		init();
+	}
+
+	public void init() {
+
+		HashMap<String, String> mapping = FileStream
+				.readPersonalDetailsFromFile();
+		loginNameGol = mapping.get(Login.loginGol.getValue());
+		loginNameTam = mapping.get(Login.loginTam.getValue());
+		pswdNameGol = mapping.get(Login.passwordGol.getValue());
+		pswdNameTam = mapping.get(Login.passwordTam.getValue());
 	}
 
 	private void forwardPeriod() {
@@ -85,15 +104,51 @@ public class Search {
 
 		loginPageGol();
 		smilesPage();
-		smilesSearchPage(origem, destino);
+		smilesSearchPage(from, to);
+		extractFlightDetails();
 
-		int i = 0;
-		while (i < 3) {
-			this.forwardPeriod();
-			nextSearchPage();
-			i++;
+		// int i = 0;
+		// while (i < 3) {
+		// this.forwardPeriod();
+		// nextSearchPage();
+		// i++;
+		// }
+
+	}
+
+	public void extractFlightDetails() {
+		List<WebElement> resultList = driver.findElements(By
+				.cssSelector(".containerSelect"));
+		WebElement departure = resultList.get(0);
+		WebElement rtn = resultList.get(1);
+
+		List<WebElement> departures = departure.findElements(By
+				.cssSelector(".containerVoos"));
+
+		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
+		for (WebElement webElement : departures) {
+			WebElement flightDetails = webElement.findElement(By
+					.cssSelector(".contentFlight"));
+			WebElement flightPrice = webElement.findElement(By
+					.cssSelector(".contentTarifas"));
+			
+			String code = flightDetails.findElement(By.cssSelector(".voo-titulo")).getText();
+			String leave = flightDetails.findElement(By.cssSelector(".saida-voo")).getText();
+			String arrive = flightDetails.findElement(By.cssSelector(".chegada-voo")).getText();
+			String duration = flightDetails.findElement(By.cssSelector(".duracao-voo")).getText();
+			
+			listaFlights.add(ParserFlight.parseTo(code, leave, arrive, duration, flightPrice.getText(), from, to));
 		}
-
+		
+		try {
+			FileStream.outputResults(listaFlights);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public void SearchTam() {
@@ -122,7 +177,7 @@ public class Search {
 		waitPageLoaded();
 
 		navigateThroughInternalFramesSearch();
-		
+
 		WebElement origin = driver
 				.findElement(By.id("fs_container_origins[0]"));
 		origin.findElement(By.cssSelector("a")).click();
@@ -144,20 +199,23 @@ public class Search {
 				.findElement(By.cssSelector("a"));
 		searchButton.click();
 	}
-	
+
 	private void nextSearchPage() {
-		waitPageLoaded();		
+		waitPageLoaded();
 
 		chooseDepartureDate();
 		chooseReturnDate();
 
-		driver.findElement(By.id("search")).findElement(By.cssSelector("[class='btnContinuar btnewSearchSelect']")).click();
+		driver.findElement(By.id("search"))
+				.findElement(
+						By.cssSelector("[class='btnContinuar btnewSearchSelect']"))
+				.click();
 	}
 
 	private void chooseDepartureDate() {
 		WebElement departure = driver.findElement(By.id(DATEPICKER_INPUT_IDA));
 		SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
-		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE; 
+		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 		departure.sendKeys(del + format.format(departureDate.getTime()));
 	}
 
@@ -239,34 +297,5 @@ public class Search {
 		// SplitCityNameCode nameSplit = new SplitCityNameCode();
 		// nameSplit.splitExtractListCities();
 
-	}
-	
-	private void readPersonalDetailsFromFile(){
-		BufferedReader br = null;
-		 
-		try {
- 
-			String sCurrentLine;
- 
-			br = new BufferedReader(new FileReader("./login.txt"));
- 
-			while ((sCurrentLine = br.readLine()) != null) {
-				String[] dados = sCurrentLine.split("=");
-				login.put(dados[0], dados[1]);
-			}
-			loginNameGol = login.get("loginNameGol");
-			loginNameTam = login.get("loginNameTam");
-			pswdNameGol = login.get("pswdNameGol");
-			pswdNameTam = login.get("pswdNameTam");
- 
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (br != null)br.close();
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
-		}
 	}
 }
