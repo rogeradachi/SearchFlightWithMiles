@@ -1,0 +1,4 @@
+loginNameGol=
+loginNameTam=
+pswdNameGol=
+psgdNameTam=
