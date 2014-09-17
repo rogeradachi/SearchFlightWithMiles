@@ -1,10 +1,6 @@
 package main;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -14,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import model.FlightDetails;
+import model.FlightMatches;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -29,12 +26,13 @@ import conditional.WaitPageLoad;
 import enums.Login;
 
 public class Search {
+	private final String DD_MM_YYYY = "dd/MM/yyyy";
 	private final int oneWeek = 7;
-	private final String DATEPICKER_INPUT_VOLTA = "datepickerInputVolta";
-	private final String DATEPICKER_INPUT_IDA = "datepickerInputIda";
-	final String golInputLoginId = "s_1_1_9_0";
-	final String golInputPswdId = "s_1_1_10_0";
-	final String golSubmitLoginId = "s_1_1_12_0";
+	private final String DATEPICKER_INPUT_VOLTA = "id('datepickerInputVolta')";
+	private final String DATEPICKER_INPUT_IDA = "id('datepickerInputIda')";
+	final String golInputLoginxPath = "id('s_1_1_9_0')";
+	final String golInputPswdxPath = "id('s_1_1_10_0')";
+	final String golSubmitLoginxPath = "id('s_1_1_12_0')";
 	final String golGoToTicketsId = "s_4_1_4_0";
 	final String gol = "https://clientes.smiles.com.br/eloyalty_ptb/start.swe?SWECmd=GotoView&SWEView=Login%20View";
 	final String tam = "http://www.tam.com.br";
@@ -56,6 +54,8 @@ public class Search {
 	private int returnDay;
 	private String departureDayofWeek;
 	private String returnDayofWeek;
+	private int maximumMilesLimit;
+	private int maximumAmountLimit;
 
 	private Map<String, String> login;
 
@@ -76,7 +76,7 @@ public class Search {
 
 		departureDate.set(departureYear, departureMonth, departureDay);
 		returnDate.set(returnYear, returnMonth, returnDay);
-		
+
 		init();
 	}
 
@@ -88,6 +88,9 @@ public class Search {
 		loginNameTam = mapping.get(Login.loginTam.getValue());
 		pswdNameGol = mapping.get(Login.passwordGol.getValue());
 		pswdNameTam = mapping.get(Login.passwordTam.getValue());
+
+		maximumMilesLimit = 30000;
+		maximumAmountLimit = 1000;
 	}
 
 	private void forwardPeriod() {
@@ -117,31 +120,22 @@ public class Search {
 	}
 
 	public void extractFlightDetails() {
-		List<WebElement> resultList = driver.findElements(By
-				.cssSelector(".containerSelect"));
-		WebElement departure = resultList.get(0);
-		WebElement rtn = resultList.get(1);
+		FlightMatches searchMatches = new FlightMatches();
+		// departure flights
+		List<WebElement> departures = driver.findElements(By
+				.xpath("id('site')/div[6]/div[3]/div"));
+		departures.remove(0);// remove header
+		searchMatches.setDepartureFlights(extractListDetails(departures));
 
-		List<WebElement> departures = departure.findElements(By
-				.cssSelector(".containerVoos"));
+		// return flights
+		List<WebElement> arrives = driver.findElements(By
+				.xpath("id('site')/div[7]/div[3]/div"));
+		arrives.remove(0);// remove header
 
-		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
-		for (WebElement webElement : departures) {
-			WebElement flightDetails = webElement.findElement(By
-					.cssSelector(".contentFlight"));
-			WebElement flightPrice = webElement.findElement(By
-					.cssSelector(".contentTarifas"));
-			
-			String code = flightDetails.findElement(By.cssSelector(".voo-titulo")).getText();
-			String leave = flightDetails.findElement(By.cssSelector(".saida-voo")).getText();
-			String arrive = flightDetails.findElement(By.cssSelector(".chegada-voo")).getText();
-			String duration = flightDetails.findElement(By.cssSelector(".duracao-voo")).getText();
-			
-			listaFlights.add(ParserFlight.parseTo(code, leave, arrive, duration, flightPrice.getText(), from, to));
-		}
-		
+		searchMatches.setReturnFlights(extractListDetails(arrives));
+
 		try {
-			FileStream.outputResults(listaFlights);
+			FileStream.outputResults(searchMatches.getReturnFlights());
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -149,6 +143,31 @@ public class Search {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private ArrayList<FlightDetails> extractListDetails(List<WebElement> details) {
+		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
+
+		for (WebElement webElement : details) {
+			WebElement flightDetails = webElement.findElement(By
+					.cssSelector(".contentFlight"));
+			WebElement flightPrice = webElement.findElement(By
+					.cssSelector(".contentTarifas"));
+
+			String code = flightDetails.findElement(
+					By.cssSelector(".voo-titulo")).getText();
+			String leave = flightDetails.findElement(
+					By.cssSelector(".saida-voo")).getText();
+			String arrive = flightDetails.findElement(
+					By.cssSelector(".chegada-voo")).getText();
+			String duration = flightDetails.findElement(
+					By.cssSelector(".duracao-voo")).getText();
+
+			listaFlights.add(ParserFlight.parseTo(code, leave, arrive,
+					duration, flightPrice.getText(), from, to));
+		}
+
+		return listaFlights;
 	}
 
 	public void SearchTam() {
@@ -161,9 +180,9 @@ public class Search {
 		waitPageLoaded();
 
 		navigateThroughInternalFramesGol();
-		inputLogin(loginNameGol, golInputLoginId);
-		inputPassWord(pswdNameGol, golInputPswdId);
-		driver.findElement(By.id(golSubmitLoginId)).click();
+		inputLogin(loginNameGol, golInputLoginxPath);
+		inputPassWord(pswdNameGol, golInputPswdxPath);
+		driver.findElement(By.xpath(golSubmitLoginxPath)).click();
 	}
 
 	private void smilesPage() {
@@ -177,27 +196,23 @@ public class Search {
 		waitPageLoaded();
 
 		navigateThroughInternalFramesSearch();
-
-		WebElement origin = driver
-				.findElement(By.id("fs_container_origins[0]"));
-		origin.findElement(By.cssSelector("a")).click();
-		List<WebElement> originLi = origin
-				.findElements(By.cssSelector("ul li"));
+		/* Departure Airport*/
+		// dropdown list has to become active
+		driver.findElement(By.xpath("id('fs_container_origins[0]')/a")).click();
+		List<WebElement> originLi = driver.findElements(By
+				.xpath("id('fs_popUp_origins[0]')/ul/li"));
 		chooseFromItemList(originLi, origem);
-
-		WebElement destinationDiv = driver.findElement(By
-				.id("fs_container_destinations[0]"));
-		destinationDiv.findElement(By.cssSelector("a")).click();
-		List<WebElement> destinationLi = destinationDiv.findElements(By
-				.cssSelector("ul li"));
+		/* Destination Airport*/
+		driver.findElement(By.xpath("id('fs_container_destinations[0]')/a"))
+				.click();// dropdown list has to become active
+		List<WebElement> destinationLi = driver.findElements(By
+				.xpath("id('fs_popUp_destinations[0]')/ul/li"));
 		chooseFromItemList(destinationLi, destino);
 
 		chooseDepartureDate();
 		chooseReturnDate();
 
-		WebElement searchButton = driver.findElement(By.id("toCategory"))
-				.findElement(By.cssSelector("a"));
-		searchButton.click();
+		driver.findElement(By.xpath("id('toCategory')/a")).click();
 	}
 
 	private void nextSearchPage() {
@@ -206,22 +221,21 @@ public class Search {
 		chooseDepartureDate();
 		chooseReturnDate();
 
-		driver.findElement(By.id("search"))
-				.findElement(
-						By.cssSelector("[class='btnContinuar btnewSearchSelect']"))
-				.click();
+		driver.findElement(By.xpath("id('search')/div[3]/a")).click();
 	}
 
 	private void chooseDepartureDate() {
-		WebElement departure = driver.findElement(By.id(DATEPICKER_INPUT_IDA));
-		SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+		WebElement departure = driver.findElement(By
+				.xpath(DATEPICKER_INPUT_IDA));
+		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 		departure.sendKeys(del + format.format(departureDate.getTime()));
 	}
 
 	private void chooseReturnDate() {
-		WebElement returndt = driver.findElement(By.id(DATEPICKER_INPUT_VOLTA));
-		SimpleDateFormat format = new SimpleDateFormat("dd/MM/yyyy");
+		WebElement returndt = driver.findElement(By
+				.xpath(DATEPICKER_INPUT_VOLTA));
+		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 		returndt.sendKeys(del + format.format(returnDate.getTime()));
 	}
@@ -277,12 +291,12 @@ public class Search {
 	}
 
 	private void inputLogin(String loginName, String id) {
-		WebElement input = driver.findElement(By.id(id));
+		WebElement input = driver.findElement(By.xpath(id));
 		input.sendKeys(loginName);
 	}
 
-	private void inputPassWord(String loginName, String id) {
-		WebElement input = driver.findElement(By.id(id));
+	private void inputPassWord(String loginName, String pswd) {
+		WebElement input = driver.findElement(By.xpath(pswd));
 		input.sendKeys(loginName);
 	}
 

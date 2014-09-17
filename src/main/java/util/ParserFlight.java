@@ -20,10 +20,29 @@ public class ParserFlight {
 			String to) {
 		FlightDetails details = new FlightDetails();
 
-		details.setFlightCode(flightCode).setFlightTime(departureTime)
-				.setArriveTime(arriveTime)
-				.setFlightDuration(timeUntilDestination).setAmount(amountLine);
+		details.setFlightCode(flightCode).setFlightTime(getHour(departureTime))
+				.setArriveTime(getHour(arriveTime))
+				.setFlightDuration(getHour(timeUntilDestination)).setAmount(getAmount(amountLine));
 
 		return details;
+	}
+
+	private static String getHour(String value) {
+		int index = value.indexOf("h");
+		if (index > 0) {
+			return value.substring(index - 2, index + 3);
+		}
+		
+		int index2 = value.indexOf("H");
+		if (index > 0) {
+			return value.substring(index - 2, index + 3);
+		}
+		
+		return "NoTime";
+	}
+	
+	private static int getAmount(String value){
+		value = value.replaceAll(".", "").replaceAll(",", "");
+		return Integer.parseInt(value);
 	}
 }

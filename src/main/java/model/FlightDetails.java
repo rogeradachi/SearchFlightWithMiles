@@ -2,7 +2,7 @@ package model;
 
 public class FlightDetails {
 	private String flightCode;
-	private String amount;
+	private Integer amount;
 	private String from;
 	private String to;
 	private String flightDuration;
@@ -17,10 +17,10 @@ public class FlightDetails {
 		this.flightCode = flightCode;
 		return this;
 	}
-	public String getAmount() {
+	public Integer getAmount() {
 		return amount;
 	}
-	public FlightDetails setAmount(String amount) {
+	public FlightDetails setAmount(Integer amount) {
 		this.amount = amount;
 		return this;
 	}
