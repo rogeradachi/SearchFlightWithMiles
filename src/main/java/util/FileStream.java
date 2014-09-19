@@ -1,25 +1,33 @@
 package util;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import enums.FileName;
 import model.FlightDetails;
+import enums.FileName;
 
 public class FileStream {
 	public static void outputResults(ArrayList<FlightDetails> flightList) throws FileNotFoundException, UnsupportedEncodingException {
-		PrintWriter writer = new PrintWriter(FileName.resultFile.getValue(), "UTF-8");
-		
-		for (FlightDetails flight: flightList){
-			writer.println(flight.toString());	
+		PrintWriter writer;
+		try {
+			writer = new PrintWriter(new BufferedWriter(new FileWriter(FileName.resultFile.getValue(), true)));
+			
+			for (FlightDetails flight: flightList){
+				writer.println(flight.toString());	
+			}
+			writer.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		writer.close();
 	}
 	
 	public static HashMap<String, String> readPersonalDetailsFromFile() {

@@ -24,6 +24,7 @@ import util.FileStream;
 import util.ParserFlight;
 import conditional.WaitPageLoad;
 import enums.Login;
+import enums.NationalAirports;
 
 public class Search {
 	private final String DD_MM_YYYY = "dd/MM/yyyy";
@@ -40,18 +41,25 @@ public class Search {
 	private String loginNameTam;
 	private String pswdNameGol;
 	private String pswdNameTam;
-	private String from = "SAO";
-	private String to = "FLN";
+	private NationalAirports from;
+	private NationalAirports to;
 	private WebDriver driver;
 
 	private Calendar departureDate;
 	private Calendar returnDate;
+	private Calendar latestPossibleReturnDate;
 	private int departureYear;
 	private int departureMonth;
 	private int departureDay;
+	private int departureHour;
+	private int departureMinute;
+
 	private int returnYear;
 	private int returnMonth;
 	private int returnDay;
+	private int returnHour;
+	private int returnMinute;
+
 	private String departureDayofWeek;
 	private String returnDayofWeek;
 	private int maximumMilesLimit;
@@ -64,6 +72,7 @@ public class Search {
 		driver = new FirefoxDriver();
 		departureDate = Calendar.getInstance();
 		returnDate = Calendar.getInstance();
+		latestPossibleReturnDate = Calendar.getInstance();
 
 		departureYear = 2014;
 		returnYear = 2014;
@@ -74,23 +83,32 @@ public class Search {
 		departureDay = 15;
 		returnDay = 18;
 
-		departureDate.set(departureYear, departureMonth, departureDay);
-		returnDate.set(returnYear, returnMonth, returnDay);
+		departureHour = 18;
+		departureMinute = 00;
+		returnHour = 19;
+		returnMinute = 00;
+				
+		departureDate.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
+		returnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);
+		
+		latestPossibleReturnDate.set(2014, 11, 30, returnHour,returnMinute);
 
 		init();
 	}
 
 	public void init() {
 
-		HashMap<String, String> mapping = FileStream
-				.readPersonalDetailsFromFile();
+		HashMap<String, String> mapping = FileStream.readPersonalDetailsFromFile();
 		loginNameGol = mapping.get(Login.loginGol.getValue());
 		loginNameTam = mapping.get(Login.loginTam.getValue());
 		pswdNameGol = mapping.get(Login.passwordGol.getValue());
 		pswdNameTam = mapping.get(Login.passwordTam.getValue());
 
-		maximumMilesLimit = 30000;
-		maximumAmountLimit = 1000;
+		from = NationalAirports.SP_TODOS;
+		to = NationalAirports.SC_Florianopolis;
+
+		maximumMilesLimit = 20000;
+		maximumAmountLimit = 500;
 	}
 
 	private void forwardPeriod() {
@@ -110,32 +128,31 @@ public class Search {
 		smilesSearchPage(from, to);
 		extractFlightDetails();
 
-		// int i = 0;
-		// while (i < 3) {
-		// this.forwardPeriod();
-		// nextSearchPage();
-		// i++;
-		// }
+		while (latestPossibleReturnDate.after(returnDate)) {
+			this.forwardPeriod();
+			nextSearchPage();
+			extractFlightDetails();
+		}
 
 	}
 
 	public void extractFlightDetails() {
-		FlightMatches searchMatches = new FlightMatches();
+		waitPageLoaded();
+
+		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, departureDate, returnDate);
 		// departure flights
-		List<WebElement> departures = driver.findElements(By
-				.xpath("id('site')/div[6]/div[3]/div"));
+		List<WebElement> departures = driver.findElements(By.xpath("id('site')/div[6]/div[3]/div"));
 		departures.remove(0);// remove header
 		searchMatches.setDepartureFlights(extractListDetails(departures));
 
 		// return flights
-		List<WebElement> arrives = driver.findElements(By
-				.xpath("id('site')/div[7]/div[3]/div"));
+		List<WebElement> arrives = driver.findElements(By.xpath("id('site')/div[7]/div[3]/div"));
 		arrives.remove(0);// remove header
 
 		searchMatches.setReturnFlights(extractListDetails(arrives));
 
 		try {
-			FileStream.outputResults(searchMatches.getReturnFlights());
+			FileStream.outputResults(searchMatches.bestMilesFares());
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -149,22 +166,18 @@ public class Search {
 		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
 
 		for (WebElement webElement : details) {
-			WebElement flightDetails = webElement.findElement(By
-					.cssSelector(".contentFlight"));
-			WebElement flightPrice = webElement.findElement(By
-					.cssSelector(".contentTarifas"));
+			WebElement flightDetails = webElement.findElement(By.cssSelector(".contentFlight"));
+			WebElement flightPrice = webElement.findElement(By.cssSelector(".contentTarifas"));
 
-			String code = flightDetails.findElement(
-					By.cssSelector(".voo-titulo")).getText();
-			String leave = flightDetails.findElement(
-					By.cssSelector(".saida-voo")).getText();
-			String arrive = flightDetails.findElement(
-					By.cssSelector(".chegada-voo")).getText();
-			String duration = flightDetails.findElement(
-					By.cssSelector(".duracao-voo")).getText();
+			String code = flightDetails.findElement(By.cssSelector(".voo-titulo")).getText();
+			String leave = flightDetails.findElement(By.cssSelector(".saida-voo")).getText();
+			String arrive = flightDetails.findElement(By.cssSelector(".chegada-voo")).getText();
+			String duration = flightDetails.findElement(By.cssSelector(".duracao-voo")).getText();
 
-			listaFlights.add(ParserFlight.parseTo(code, leave, arrive,
-					duration, flightPrice.getText(), from, to));
+			Calendar departureDate = ParserFlight.returnCalendar(leave, this.departureDay, this.departureMonth, this.departureYear);
+			Calendar returnDate = ParserFlight.returnCalendar(arrive, this.returnDay, this.returnMonth, this.returnYear);
+
+			listaFlights.add(ParserFlight.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), from, to));
 		}
 
 		return listaFlights;
@@ -192,21 +205,21 @@ public class Search {
 		driver.findElement(By.id(golGoToTicketsId)).click();
 	}
 
-	private void smilesSearchPage(String origem, String destino) {
+	private void smilesSearchPage(NationalAirports origem, NationalAirports destino) {
 		waitPageLoaded();
 
 		navigateThroughInternalFramesSearch();
-		/* Departure Airport*/
-		// dropdown list has to become active
+
+		waitPageLoaded();
+		/* Departure Airport */
+		/* dropdown list has to become active */
 		driver.findElement(By.xpath("id('fs_container_origins[0]')/a")).click();
-		List<WebElement> originLi = driver.findElements(By
-				.xpath("id('fs_popUp_origins[0]')/ul/li"));
+		List<WebElement> originLi = driver.findElements(By.xpath("id('fs_popUp_origins[0]')/ul/li"));
 		chooseFromItemList(originLi, origem);
-		/* Destination Airport*/
-		driver.findElement(By.xpath("id('fs_container_destinations[0]')/a"))
-				.click();// dropdown list has to become active
-		List<WebElement> destinationLi = driver.findElements(By
-				.xpath("id('fs_popUp_destinations[0]')/ul/li"));
+		/* Destination Airport */
+		/* dropdown list has to become active */
+		driver.findElement(By.xpath("id('fs_container_destinations[0]')/a")).click();
+		List<WebElement> destinationLi = driver.findElements(By.xpath("id('fs_popUp_destinations[0]')/ul/li"));
 		chooseFromItemList(destinationLi, destino);
 
 		chooseDepartureDate();
@@ -225,25 +238,22 @@ public class Search {
 	}
 
 	private void chooseDepartureDate() {
-		WebElement departure = driver.findElement(By
-				.xpath(DATEPICKER_INPUT_IDA));
+		WebElement departure = driver.findElement(By.xpath(DATEPICKER_INPUT_IDA));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 		departure.sendKeys(del + format.format(departureDate.getTime()));
 	}
 
 	private void chooseReturnDate() {
-		WebElement returndt = driver.findElement(By
-				.xpath(DATEPICKER_INPUT_VOLTA));
+		WebElement returndt = driver.findElement(By.xpath(DATEPICKER_INPUT_VOLTA));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 		returndt.sendKeys(del + format.format(returnDate.getTime()));
 	}
 
-	private void chooseFromItemList(List<WebElement> listItem,
-			String destination) {
+	private void chooseFromItemList(List<WebElement> listItem, NationalAirports destination) {
 		StringBuilder builder = new StringBuilder();
-		builder.append("(").append(destination).append(")");
+		builder.append("(").append(destination.code()).append(")");
 		for (WebElement webElement : listItem) {
 			if (webElement.getText().contains(builder.toString())) {
 				webElement.click();
@@ -260,7 +270,7 @@ public class Search {
 	}
 
 	private void waitPageLoaded() {
-		WebDriverWait wait = new WebDriverWait(driver, 30);
+		WebDriverWait wait = new WebDriverWait(driver, 45);
 		wait.until(ExpectedConditions.refreshed(new WaitPageLoad()));
 	}
 

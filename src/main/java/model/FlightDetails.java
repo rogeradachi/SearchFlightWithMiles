@@ -1,14 +1,19 @@
 package model;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+
+import enums.NationalAirports;
+
 public class FlightDetails {
 	private String flightCode;
 	private Integer amount;
-	private String from;
-	private String to;
+	private NationalAirports from;
+	private NationalAirports to;
 	private String flightDuration;
-	private String stopOvers;
-	private String arriveTime;
-	private String flightTime;
+	private Integer stopOvers;
+	private Calendar arriveTime;
+	private Calendar flightTime;
 	
 	public String getFlightCode() {
 		return flightCode;
@@ -24,17 +29,18 @@ public class FlightDetails {
 		this.amount = amount;
 		return this;
 	}
-	public String getFrom() {
+	
+	public NationalAirports getFrom() {
 		return from;
 	}
-	public FlightDetails setFrom(String from) {
+	public FlightDetails setFrom(NationalAirports from) {
 		this.from = from;
 		return this;
 	}
-	public String getTo() {
+	public NationalAirports getTo() {
 		return to;
 	}
-	public FlightDetails setTo(String to) {
+	public FlightDetails setTo(NationalAirports to) {
 		this.to = to;
 		return this;
 	}
@@ -45,33 +51,35 @@ public class FlightDetails {
 		this.flightDuration = flightDuration;
 		return this;
 	}
-	public String getStopOvers() {
+	public Integer getStopOvers() {
 		return stopOvers;
 	}
-	public FlightDetails setStopOvers(String stopOvers) {
+	public FlightDetails setStopOvers(Integer stopOvers) {
 		this.stopOvers = stopOvers;
 		return this;
 	}
-	public String getArriveTime() {
+	
+	public Calendar getArriveTime() {
 		return arriveTime;
 	}
-	public FlightDetails setArriveTime(String arriveTime) {
+	public FlightDetails setArriveTime(Calendar arriveTime) {
 		this.arriveTime = arriveTime;
 		return this;
 	}
-	public String getFlightTime() {
+	public Calendar getFlightTime() {
 		return flightTime;
 	}
-	public FlightDetails setFlightTime(String flightTime) {
+	public FlightDetails setFlightTime(Calendar flightTime) {
 		this.flightTime = flightTime;
 		return this;
 	}
 	@Override
 	public String toString() {
+		SimpleDateFormat brasilianFormat = new SimpleDateFormat("dd/MM/yyyy hh'h'mm");
 		return "Codigo=" + flightCode + ", valor=" + amount
-				+ ", Saida=" + from + ", Chegada=" + to + ", Duracao="
-				+ flightDuration + ", Paradas=" + stopOvers + ", Partida=" + flightTime + ", Chegada="
-				+ arriveTime;
+				+ ", Saida=" + from.code() + ", Chegada=" + to.code() + ", Duracao="
+				+ flightDuration + ", Paradas=" + stopOvers + ", Partida=" + brasilianFormat.format(flightTime.getTime()) + ", Chegada="
+				+ brasilianFormat.format(arriveTime.getTime());
 	}
 	
 	
