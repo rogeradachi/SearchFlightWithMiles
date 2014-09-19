@@ -75,11 +75,9 @@ public class FlightDetails {
 	}
 	@Override
 	public String toString() {
-		SimpleDateFormat brasilianFormat = new SimpleDateFormat("dd/MM/yyyy hh'h'mm");
 		return "Codigo=" + flightCode + ", valor=" + amount
 				+ ", Saida=" + from.code() + ", Chegada=" + to.code() + ", Duracao="
-				+ flightDuration + ", Paradas=" + stopOvers + ", Partida=" + brasilianFormat.format(flightTime.getTime()) + ", Chegada="
-				+ brasilianFormat.format(arriveTime.getTime());
+				+ flightDuration + ", Paradas=" + stopOvers + ", Partida=" + flightTime.getTime() + ", Chegada="+ arriveTime.getTime();
 	}
 	
 	

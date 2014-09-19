@@ -62,7 +62,7 @@ public class FlightMatches {
 	}
 	
 	private void excludesFlightsNotInTheInterval(){
-		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();		
+		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();
 		for (FlightDetails flightDetails : departureFlights) {
 			if(flightDetails.getFlightTime().before(earliestDepartureTime)){
 				exclusions.add(flightDetails);
@@ -72,8 +72,7 @@ public class FlightMatches {
 		exclusions.clear();
 		
 		for (FlightDetails flightDetails2 : returnFlights) {
-			if(flightDetails2.getFlightTime().after(latestReturnTime)){
-				returnFlights.remove(flightDetails2);
+			if(flightDetails2.getFlightTime().after(latestReturnTime)){				
 				exclusions.add(flightDetails2);
 			}
 		}

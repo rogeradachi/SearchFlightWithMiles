@@ -2,11 +2,15 @@ package main;
 
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import model.FlightDetails;
@@ -44,10 +48,12 @@ public class Search {
 	private NationalAirports from;
 	private NationalAirports to;
 	private WebDriver driver;
+	
+	private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy hh:mm");
 
-	private Calendar departureDate;
-	private Calendar returnDate;
-	private Calendar latestPossibleReturnDate;
+	private Calendar earliestDepartureHour;
+	private Calendar latestReturnDate;
+	private Calendar lastAvailableTravellingDate;
 	private int departureYear;
 	private int departureMonth;
 	private int departureDay;
@@ -70,28 +76,27 @@ public class Search {
 	public Search() {
 		login = new HashMap<String, String>();
 		driver = new FirefoxDriver();
-		departureDate = Calendar.getInstance();
-		returnDate = Calendar.getInstance();
-		latestPossibleReturnDate = Calendar.getInstance();
+		earliestDepartureHour = GregorianCalendar.getInstance(Locale.US);
+		latestReturnDate = GregorianCalendar.getInstance(Locale.US);
+		lastAvailableTravellingDate = GregorianCalendar.getInstance(Locale.US);
 
 		departureYear = 2014;
 		returnYear = 2014;
 
-		departureMonth = 11;
-		returnMonth = 11;
+		departureMonth = 9;
+		returnMonth = 9;
 
-		departureDay = 15;
-		returnDay = 18;
+		departureDay = 19;
+		returnDay = 21;
 
 		departureHour = 18;
-		departureMinute = 00;
+		departureMinute = 10;
 		returnHour = 19;
-		returnMinute = 00;
+		returnMinute = 10;
 				
-		departureDate.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
-		returnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);
-		
-		latestPossibleReturnDate.set(2014, 11, 30, returnHour,returnMinute);
+		earliestDepartureHour.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
+		latestReturnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);		
+		lastAvailableTravellingDate.set(2014, 11, 30, returnHour,returnMinute);
 
 		init();
 	}
@@ -112,13 +117,23 @@ public class Search {
 	}
 
 	private void forwardPeriod() {
-		departureDate.add(Calendar.DATE, oneWeek);
-		returnDate.add(Calendar.DATE, oneWeek);
+		earliestDepartureHour.add(Calendar.DATE, oneWeek);
+		earliestDepartureHour.set(Calendar.HOUR_OF_DAY, departureHour);
+		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
+		
+		latestReturnDate.add(Calendar.DATE, oneWeek);
+		latestReturnDate.add(Calendar.HOUR_OF_DAY, returnHour);
+		latestReturnDate.add(Calendar.MINUTE, returnMinute);
 	}
 
 	private void forwardPeriod(int forwardDays) {
-		departureDate.add(Calendar.DATE, forwardDays);
-		returnDate.add(Calendar.DATE, forwardDays);
+		earliestDepartureHour.add(Calendar.DATE, forwardDays);
+		earliestDepartureHour.set(Calendar.HOUR_OF_DAY, departureHour);
+		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
+		
+		latestReturnDate.add(Calendar.DATE, forwardDays);
+		latestReturnDate.add(Calendar.HOUR_OF_DAY, returnHour);
+		latestReturnDate.add(Calendar.MINUTE, returnMinute);
 	}
 
 	public void SearchGol() {
@@ -128,28 +143,29 @@ public class Search {
 		smilesSearchPage(from, to);
 		extractFlightDetails();
 
-		while (latestPossibleReturnDate.after(returnDate)) {
+		while (lastAvailableTravellingDate.after(latestReturnDate)) {
 			this.forwardPeriod();
 			nextSearchPage();
 			extractFlightDetails();
 		}
 
+		driver.close();
 	}
 
 	public void extractFlightDetails() {
 		waitPageLoaded();
 
-		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, departureDate, returnDate);
+		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, earliestDepartureHour, latestReturnDate);
 		// departure flights
 		List<WebElement> departures = driver.findElements(By.xpath("id('site')/div[6]/div[3]/div"));
 		departures.remove(0);// remove header
-		searchMatches.setDepartureFlights(extractListDetails(departures));
+		searchMatches.setDepartureFlights(extractListDetails(departures, earliestDepartureHour));
 
 		// return flights
 		List<WebElement> arrives = driver.findElements(By.xpath("id('site')/div[7]/div[3]/div"));
 		arrives.remove(0);// remove header
 
-		searchMatches.setReturnFlights(extractListDetails(arrives));
+		searchMatches.setReturnFlights(extractListDetails(arrives, latestReturnDate));
 
 		try {
 			FileStream.outputResults(searchMatches.bestMilesFares());
@@ -162,7 +178,7 @@ public class Search {
 		}
 	}
 
-	private ArrayList<FlightDetails> extractListDetails(List<WebElement> details) {
+	private ArrayList<FlightDetails> extractListDetails(List<WebElement> details, Calendar flightTime) {
 		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
 
 		for (WebElement webElement : details) {
@@ -174,10 +190,14 @@ public class Search {
 			String arrive = flightDetails.findElement(By.cssSelector(".chegada-voo")).getText();
 			String duration = flightDetails.findElement(By.cssSelector(".duracao-voo")).getText();
 
-			Calendar departureDate = ParserFlight.returnCalendar(leave, this.departureDay, this.departureMonth, this.departureYear);
-			Calendar returnDate = ParserFlight.returnCalendar(arrive, this.returnDay, this.returnMonth, this.returnYear);
-
-			listaFlights.add(ParserFlight.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), from, to));
+			//TODO: verificar o conflitos de datas fixas do voo de partida e chegada (podem ocorrer em dias diferentes e consequentemnte em anos diferentes)
+			Calendar departureDate = ParserFlight.returnCalendar(leave,flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
+			Calendar returnDate = ParserFlight.returnCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
+			
+			FlightDetails flight = ParserFlight.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), from, to);
+			if(flight != null){
+				listaFlights.add(flight);
+			}
 		}
 
 		return listaFlights;
@@ -241,14 +261,14 @@ public class Search {
 		WebElement departure = driver.findElement(By.xpath(DATEPICKER_INPUT_IDA));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
-		departure.sendKeys(del + format.format(departureDate.getTime()));
+		departure.sendKeys(del + format.format(earliestDepartureHour.getTime()));
 	}
 
 	private void chooseReturnDate() {
 		WebElement returndt = driver.findElement(By.xpath(DATEPICKER_INPUT_VOLTA));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
-		returndt.sendKeys(del + format.format(returnDate.getTime()));
+		returndt.sendKeys(del + format.format(latestReturnDate.getTime()));
 	}
 
 	private void chooseFromItemList(List<WebElement> listItem, NationalAirports destination) {
@@ -318,6 +338,24 @@ public class Search {
 		// TODO Auto-generated method stub
 		Search execute = new Search();
 		execute.SearchGol();
+		
+//		try {
+//			Date data = df.parse("10/10/2014 23:12");
+//			Date data2 = df.parse("10/10/2014 23:14");
+//			Calendar calendar = GregorianCalendar.getInstance(Locale.US);
+//			Calendar calendar2 = GregorianCalendar.getInstance(Locale.US);
+//			calendar.setTime(data);
+//			calendar2.setTime(data2);
+//			System.out.println(calendar.getTime());
+//			
+//			if(calendar2.before(calendar)){
+//				System.out.println("2 antes do 1");
+//			}
+//		} catch (ParseException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+////		}
+		
 		// SplitCityNameCode nameSplit = new SplitCityNameCode();
 		// nameSplit.splitExtractListCities();
 

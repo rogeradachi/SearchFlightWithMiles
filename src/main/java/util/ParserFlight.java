@@ -1,32 +1,29 @@
 package util;
 
 import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
 
 import enums.NationalAirports;
 import model.FlightDetails;
 
 public class ParserFlight {
-	// Voo - G3-1260
-	//
-	// Sai
-	// 06h55
-	// (GRU)
-	// Chega
-	// 08h13
-	// (FLN)
-	// 0 PARADAS / DURAÇÃO: 01H18
 
-	// 10.000
 	public static FlightDetails parseTo(String flightCode, Calendar departureTime, Calendar arriveTime, String timeUntilDestination, String amountLine, NationalAirports from, NationalAirports to) {
 		FlightDetails details = new FlightDetails();
 
-		details.setFlightCode(flightCode).setFlightTime(departureTime).setArriveTime(arriveTime).setFlightDuration(timeUntilDestination).setAmount(getAmount(amountLine)).setFrom(from).setTo(to);
+		int amount = getAmount(amountLine);
 
-		return details;
+		if (amount > 0) {
+			details.setFlightCode(flightCode).setFlightTime(departureTime).setArriveTime(arriveTime).setFlightDuration(timeUntilDestination).setAmount(amount).setFrom(from).setTo(to);
+			return details;
+		} else {
+			return null;
+		}
 	}
 
 	public static Calendar returnCalendar(String time, int day, int month, int year) {
-		Calendar calendar = Calendar.getInstance();
+		Calendar calendar = GregorianCalendar.getInstance(Locale.US);
 
 		int[] hourMinute = getHour(time);
 
@@ -51,27 +48,36 @@ public class ParserFlight {
 
 		return hourMinute;
 	}
-	
-	private static String extractTime(String time){
+
+	private static String extractTime(String time) {
 		time = time.replaceAll("(\\r|\\n)", "");
-		
+
 		int ind = time.lastIndexOf('(');
-		
+
 		time = time.substring(0, ind);
-		
+
 		int ind2 = time.lastIndexOf('h');
-		if(ind2 < 1){
+		if (ind2 < 1) {
 			ind2 = time.lastIndexOf('H');
-		}		
-		
+		}
+
 		return time.substring(ind2 - 2, ind2 + 3);
 	}
 
 	private static int getAmount(String value) {
-		value = value.trim();		
-		value = value.split("\\r?\\n")[0];
+		value = value.trim();
+		if(value.contains("MILHAS REDUZIDAS")){
+			value = value.split("\\r?\\n")[1];	
+		}
+		else{
+			value = value.split("\\r?\\n")[0];
+		}
 		value = value.replaceAll("\\.", "").replaceAll(",", "");
-		value = value.replaceAll("(\\r|\\n)", "");
-		return Integer.parseInt(value);
+		value = value.replaceAll("(\\r|\\n)", "");		
+		if (value.equalsIgnoreCase("ESGOTADO")) {
+			return -1;
+		} else {
+			return Integer.parseInt(value);
+		}
 	}
 }
