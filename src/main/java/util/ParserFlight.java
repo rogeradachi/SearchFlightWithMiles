@@ -15,11 +15,15 @@ public class ParserFlight {
 		int amount = getAmount(amountLine);
 
 		if (amount > 0) {
-			details.setFlightCode(flightCode).setFlightTime(departureTime).setArriveTime(arriveTime).setFlightDuration(timeUntilDestination).setAmount(amount).setFrom(from).setTo(to);
+			details.setFlightCode(extractCode(flightCode)).setFlightTime(departureTime).setArriveTime(arriveTime).setFlightDuration(timeUntilDestination).setAmount(amount).setFrom(from).setTo(to);
 			return details;
 		} else {
 			return null;
 		}
+	}
+	
+	private static String extractCode(String flightCode){
+		return flightCode.replaceAll("Voo - ", "");
 	}
 
 	public static Calendar returnCalendar(String time, int day, int month, int year) {

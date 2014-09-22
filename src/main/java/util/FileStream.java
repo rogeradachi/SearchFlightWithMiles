@@ -13,13 +13,16 @@ import java.util.HashMap;
 
 import model.FlightDetails;
 import enums.FileName;
+import enums.NationalAirports;
 
 public class FileStream {
-	public static void outputResults(ArrayList<FlightDetails> flightList) throws FileNotFoundException, UnsupportedEncodingException {
+	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to, String company) throws FileNotFoundException, UnsupportedEncodingException {
 		PrintWriter writer;
 		try {
-			writer = new PrintWriter(new BufferedWriter(new FileWriter(FileName.resultFile.getValue(), true)));
+			String filename = String.format(FileName.resultFile.getValue(), from.code(), to.code(), company);
+			writer = new PrintWriter(new BufferedWriter(new FileWriter(filename, false)));
 			
+			writeHeader(writer);
 			for (FlightDetails flight: flightList){
 				writer.println(flight.toString());	
 			}
@@ -28,6 +31,18 @@ public class FileStream {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	private static void writeHeader(PrintWriter writer){
+		StringBuilder header = new StringBuilder();
+		header.append("Código IDA/VOLTA").append(";")
+		.append("Quanto?").append(";")
+		.append("De").append(";")
+		.append("PARA").append(";")
+		.append("Paradas").append(";")
+		.append("Horário IDA").append(";")
+		.append("Horário VOLTA").append(";");
+		writer.println();
 	}
 	
 	public static HashMap<String, String> readPersonalDetailsFromFile() {

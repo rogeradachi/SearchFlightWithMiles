@@ -2,11 +2,10 @@ package main;
 
 import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -46,9 +45,9 @@ public class Search {
 	private String pswdNameGol;
 	private String pswdNameTam;
 	private NationalAirports from;
-	private NationalAirports to;
+	private ArrayList<NationalAirports> to;
 	private WebDriver driver;
-	
+
 	private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy hh:mm");
 
 	private Calendar earliestDepartureHour;
@@ -71,6 +70,8 @@ public class Search {
 	private int maximumMilesLimit;
 	private int maximumAmountLimit;
 
+	private ArrayList<FlightDetails> matches;
+
 	private Map<String, String> login;
 
 	public Search() {
@@ -83,21 +84,22 @@ public class Search {
 		departureYear = 2014;
 		returnYear = 2014;
 
-		departureMonth = 9;
-		returnMonth = 9;
+		departureMonth = Calendar.SEPTEMBER;
+		returnMonth = Calendar.SEPTEMBER;
 
-		departureDay = 19;
-		returnDay = 21;
+		departureDay = 26;
+		returnDay = 28;
 
-		departureHour = 18;
+		departureHour = 16;
 		departureMinute = 10;
-		returnHour = 19;
+		returnHour = 10;
 		returnMinute = 10;
-				
-		earliestDepartureHour.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
-		latestReturnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);		
-		lastAvailableTravellingDate.set(2014, 11, 30, returnHour,returnMinute);
 
+		earliestDepartureHour.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
+		latestReturnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);
+		lastAvailableTravellingDate.set(2014, Calendar.OCTOBER, 30, returnHour, returnMinute);
+
+		matches = new ArrayList<FlightDetails>();
 		init();
 	}
 
@@ -109,10 +111,12 @@ public class Search {
 		pswdNameGol = mapping.get(Login.passwordGol.getValue());
 		pswdNameTam = mapping.get(Login.passwordTam.getValue());
 
-		from = NationalAirports.SP_TODOS;
-		to = NationalAirports.SC_Florianopolis;
+		from = NationalAirports.SAO;
+		to = new ArrayList<NationalAirports>();
+		to.add(NationalAirports.FLN);
+		to.add(NationalAirports.CFN);
 
-		maximumMilesLimit = 20000;
+		maximumMilesLimit = 16000;
 		maximumAmountLimit = 500;
 	}
 
@@ -120,17 +124,17 @@ public class Search {
 		earliestDepartureHour.add(Calendar.DATE, oneWeek);
 		earliestDepartureHour.set(Calendar.HOUR_OF_DAY, departureHour);
 		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
-		
+
 		latestReturnDate.add(Calendar.DATE, oneWeek);
-		latestReturnDate.add(Calendar.HOUR_OF_DAY, returnHour);
-		latestReturnDate.add(Calendar.MINUTE, returnMinute);
+		latestReturnDate.set(Calendar.HOUR_OF_DAY, returnHour);
+		latestReturnDate.set(Calendar.MINUTE, returnMinute);
 	}
 
 	private void forwardPeriod(int forwardDays) {
 		earliestDepartureHour.add(Calendar.DATE, forwardDays);
 		earliestDepartureHour.set(Calendar.HOUR_OF_DAY, departureHour);
 		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
-		
+
 		latestReturnDate.add(Calendar.DATE, forwardDays);
 		latestReturnDate.add(Calendar.HOUR_OF_DAY, returnHour);
 		latestReturnDate.add(Calendar.MINUTE, returnMinute);
@@ -138,37 +142,31 @@ public class Search {
 
 	public void SearchGol() {
 
-		loginPageGol();
-		smilesPage();
-		smilesSearchPage(from, to);
-		extractFlightDetails();
+		try {
+			loginPageGol();// TODO: Iterate over varios destinations
 
-		while (lastAvailableTravellingDate.after(latestReturnDate)) {
-			this.forwardPeriod();
-			nextSearchPage();
-			extractFlightDetails();
+			smilesPage();
+			smilesSearchPage(from, to.get(0));
+			extractFlightDetails(to.get(0));
+
+			while (lastAvailableTravellingDate.after(latestReturnDate)) {
+				this.forwardPeriod();
+				nextSearchPage();
+				extractFlightDetails(to.get(0));
+			}
+
+			Collections.sort(matches);
+			writeOutFileResults(matches, from, to.get(0), "GOL");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			driver.close();
 		}
-
-		driver.close();
 	}
 
-	public void extractFlightDetails() {
-		waitPageLoaded();
-
-		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, earliestDepartureHour, latestReturnDate);
-		// departure flights
-		List<WebElement> departures = driver.findElements(By.xpath("id('site')/div[6]/div[3]/div"));
-		departures.remove(0);// remove header
-		searchMatches.setDepartureFlights(extractListDetails(departures, earliestDepartureHour));
-
-		// return flights
-		List<WebElement> arrives = driver.findElements(By.xpath("id('site')/div[7]/div[3]/div"));
-		arrives.remove(0);// remove header
-
-		searchMatches.setReturnFlights(extractListDetails(arrives, latestReturnDate));
-
+	private void writeOutFileResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to, String company) {
 		try {
-			FileStream.outputResults(searchMatches.bestMilesFares());
+			FileStream.outputResults(matches, from, to, company);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -178,7 +176,26 @@ public class Search {
 		}
 	}
 
-	private ArrayList<FlightDetails> extractListDetails(List<WebElement> details, Calendar flightTime) {
+	public void extractFlightDetails(NationalAirports to) {
+		waitPageLoaded();
+
+		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, earliestDepartureHour, latestReturnDate);
+		// departure flights
+		List<WebElement> departures = driver.findElements(By.xpath("id('site')/div[6]/div[3]/div"));
+		departures.remove(0);// remove header
+		searchMatches.setDepartureFlights(extractListDetails(departures, earliestDepartureHour, to));
+
+		// return flights
+		List<WebElement> arrives = driver.findElements(By.xpath("id('site')/div[7]/div[3]/div"));
+		arrives.remove(0);// remove header
+
+		searchMatches.setReturnFlights(extractListDetails(arrives, latestReturnDate, to));
+
+		matches.addAll(searchMatches.bestMilesFares());
+
+	}
+
+	private ArrayList<FlightDetails> extractListDetails(List<WebElement> details, Calendar flightTime, NationalAirports to) {
 		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
 
 		for (WebElement webElement : details) {
@@ -190,12 +207,16 @@ public class Search {
 			String arrive = flightDetails.findElement(By.cssSelector(".chegada-voo")).getText();
 			String duration = flightDetails.findElement(By.cssSelector(".duracao-voo")).getText();
 
-			//TODO: verificar o conflitos de datas fixas do voo de partida e chegada (podem ocorrer em dias diferentes e consequentemnte em anos diferentes)
-			Calendar departureDate = ParserFlight.returnCalendar(leave,flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
-			Calendar returnDate = ParserFlight.returnCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
-			
+			// TODO: verificar o conflitos de datas fixas do voo de partida e
+			// chegada (podem ocorrer em dias diferentes e consequentemnte em
+			// anos diferentes)
+			Calendar departureDate = ParserFlight.returnCalendar(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
+					flightTime.get(Calendar.YEAR));
+			Calendar returnDate = ParserFlight.returnCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
+					flightTime.get(Calendar.YEAR));
+
 			FlightDetails flight = ParserFlight.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), from, to);
-			if(flight != null){
+			if (flight != null) {
 				listaFlights.add(flight);
 			}
 		}
@@ -204,7 +225,191 @@ public class Search {
 	}
 
 	public void SearchTam() {
-		loginPageTam();
+		try {
+			loginPageTam();
+			searchMultiplus();
+
+			waitPageLoaded();
+			extractFlightDetailsMultiplus();
+
+			while (lastAvailableTravellingDate.after(latestReturnDate)) {
+				this.forwardPeriod();
+				loopSearchMultiPlus();
+				extractFlightDetailsMultiplus();
+			}
+
+			Collections.sort(matches);
+			writeOutFileResults(matches, from, to.get(0), "TAM");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			// driver.close();
+		}
+
+	}
+
+	public void searchMultiplus() {
+		waitElementVisible(".//*[@id='passenger_useMyPoints']");
+		driver.findElement(By.xpath(".//*[@id='passenger_useMyPoints']")).click();
+
+		chooseDepartureDate(".//*[@id='search_outbound_date']");
+		chooseReturnDate(".//*[@id='search_inbound_date']");
+
+		inputOutboundAirport(".//*[@id='search_from']");
+		inputInboundAirport(".//*[@id='search_to']", to.get(0));
+
+		driver.findElement(By.xpath(".//*[@id='onlineSearchSubmitButton']")).click();
+
+	}
+
+	public void loopSearchMultiPlus() {
+		chooseDepartureDate(".//*[@id='search_outbound_date']");
+		chooseReturnDate(".//*[@id='search_inbound_date']");
+
+		driver.findElement(By.xpath(".//*[@id='searchPanel']/footer/button")).click();
+		// Id: departure Airport = .//*[@id='search_from']
+		// Id: arrive Airport = .//*[@id='search_to']
+	}
+
+	public void extractFlightDetailsMultiplus() {
+		WebElement departureResults = driver.findElement(By.xpath(".//*[@id='outbound_list_flight_direct']/tbody"));
+		List<WebElement> outboundsTR = departureResults.findElements(By.cssSelector(".flight"));
+		ArrayList<FlightDetails> outboundsDeparture = new ArrayList<FlightDetails>();
+		
+		for (WebElement webElement : outboundsTR) {
+			List<WebElement> outboundsTD = webElement.findElements(By.cssSelector("td"));
+
+			String[] detailsOutbound = extractAirportAndFlightTimeMultiPlus(outboundsTD.get(0).getText());// saida
+			String[] detailsInbound = extractAirportAndFlightTimeMultiPlus(outboundsTD.get(1).getText());// chegada
+			String code = outboundsTD.get(2).getText();// codigo do voo
+			String duration = outboundsTD.get(3).getText();// duração
+			String milesPromo = extractFaresMultiPlus(outboundsTD.get(4).getText());// milhas
+																					// PROMO
+			String milesClassico = extractFaresMultiPlus(outboundsTD.get(5).getText());// milhas
+																						// classico
+			String milesIrrestrito = "-----";
+			if (outboundsTD.size() > 6) {
+				milesIrrestrito = extractFaresMultiPlus(outboundsTD.get(6).getText());// milhas
+																								// Irrestrito
+			}
+			
+			String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
+			Calendar outbound = convertCalendar(detailsOutbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH), earliestDepartureHour.get(Calendar.YEAR));
+			Calendar inbound = convertCalendar(detailsInbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH), earliestDepartureHour.get(Calendar.YEAR));
+
+			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]), NationalAirports.valueOf(detailsInbound[1]));
+			if (flight != null) {
+				outboundsDeparture.add(flight);
+			}
+		}
+		
+		WebElement returnResults = driver.findElement(By.xpath(".//*[@id='inbound_list_flight_direct']/tbody"));
+		List<WebElement> outboundsReturnTR = returnResults.findElements(By.cssSelector(".flight"));
+		ArrayList<FlightDetails> outboundsReturn = new ArrayList<FlightDetails>();
+		for (WebElement webElement : outboundsReturnTR) {
+			List<WebElement> outboundsTD = webElement.findElements(By.cssSelector("td"));
+
+			String[] detailsOutbound = extractAirportAndFlightTimeMultiPlus(outboundsTD.get(0).getText());// saida
+			String[] detailsInbound = extractAirportAndFlightTimeMultiPlus(outboundsTD.get(1).getText());// chegada
+			String code = outboundsTD.get(2).getText();// codigo do voo
+			String duration = outboundsTD.get(3).getText();// duração
+			String milesPromo = extractFaresMultiPlus(outboundsTD.get(4).getText());// milhas
+																					// PROMO
+			String milesClassico = extractFaresMultiPlus(outboundsTD.get(5).getText());// milhas
+																						// classico
+			String milesIrrestrito = "-----";
+			if (outboundsTD.size() > 6) {
+				milesIrrestrito = extractFaresMultiPlus(outboundsTD.get(6).getText());// milhas
+																								// Irrestrito
+			}
+			String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
+			Calendar outbound = convertCalendar(detailsOutbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH), latestReturnDate.get(Calendar.YEAR));
+			Calendar inbound = convertCalendar(detailsInbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH), latestReturnDate.get(Calendar.YEAR));
+			
+			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]), NationalAirports.valueOf(detailsInbound[1]));			
+			if (flight != null) {
+				outboundsReturn.add(flight);
+			}
+		}
+		
+		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, earliestDepartureHour, latestReturnDate);		
+		searchMatches.setDepartureFlights(outboundsDeparture);
+		searchMatches.setReturnFlights(outboundsReturn);
+
+		matches.addAll(searchMatches.bestMilesFares());
+	}
+
+	private String cheapestFare(String milesPromo, String milesClassico, String milesIrrestrito) {
+		Integer temp = this.maximumMilesLimit + 1;
+		String amount = temp.toString();//set above the limit
+
+		boolean keepSearching = true;
+
+		if (!milesPromo.contains("-")) {
+			try {
+				amount = milesPromo;
+				keepSearching = false;
+			} catch (Exception ex) {
+				keepSearching = true;
+			}
+		}
+		if (keepSearching && !milesClassico.contains("-")) {
+			try {
+				amount = milesClassico;
+				keepSearching = false;
+			} catch (Exception ex) {
+				keepSearching = true;
+			}
+		}
+		if (keepSearching && !milesIrrestrito.contains("-")) {
+			try {
+				amount = milesIrrestrito;
+			} catch (Exception ex) {
+				
+			}
+		}
+
+		return amount;
+	}
+
+	private Calendar convertCalendar(String timeMultiplus, int day, int month, int year) {
+		Calendar calendar = GregorianCalendar.getInstance(Locale.US);
+		String[] time = timeMultiplus.split(":");
+		calendar.set(year, month, day, Integer.parseInt(time[0]), Integer.parseInt(time[1]));
+
+		return calendar;
+	}
+
+	private String[] extractAirportAndFlightTimeMultiPlus(String value) {
+		String[] extraction = new String[3];
+
+		extraction[0] = value.substring(0, 5);// partida
+		extraction[1] = value.substring(6, 9);// aeroporto
+		if (value.length() > 9) {
+			extraction[2] = "+1";// chega no dia seguinte
+		}
+
+		return extraction;
+	}
+
+	private String extractFaresMultiPlus(String value) {
+		String extraction;
+
+		extraction = value.split("(\\r|\\n)")[0];
+
+		return extraction;
+	}
+
+	private void inputOutboundAirport(String xpath) {
+		WebElement departure = driver.findElement(By.xpath(xpath));
+		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
+		departure.sendKeys(from.toString());
+	}
+
+	private void inputInboundAirport(String xpath, NationalAirports to) {
+		WebElement departure = driver.findElement(By.xpath(xpath));
+		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
+		departure.sendKeys(to.toString());
 	}
 
 	private void loginPageGol() {
@@ -233,6 +438,7 @@ public class Search {
 		waitPageLoaded();
 		/* Departure Airport */
 		/* dropdown list has to become active */
+		waitElementVisible("id('fs_container_origins[0]')/a");
 		driver.findElement(By.xpath("id('fs_container_origins[0]')/a")).click();
 		List<WebElement> originLi = driver.findElements(By.xpath("id('fs_popUp_origins[0]')/ul/li"));
 		chooseFromItemList(originLi, origem);
@@ -242,8 +448,8 @@ public class Search {
 		List<WebElement> destinationLi = driver.findElements(By.xpath("id('fs_popUp_destinations[0]')/ul/li"));
 		chooseFromItemList(destinationLi, destino);
 
-		chooseDepartureDate();
-		chooseReturnDate();
+		chooseDepartureDate(DATEPICKER_INPUT_IDA);
+		chooseReturnDate(DATEPICKER_INPUT_VOLTA);
 
 		driver.findElement(By.xpath("id('toCategory')/a")).click();
 	}
@@ -251,21 +457,21 @@ public class Search {
 	private void nextSearchPage() {
 		waitPageLoaded();
 
-		chooseDepartureDate();
-		chooseReturnDate();
+		chooseDepartureDate(DATEPICKER_INPUT_IDA);
+		chooseReturnDate(DATEPICKER_INPUT_VOLTA);
 
 		driver.findElement(By.xpath("id('search')/div[3]/a")).click();
 	}
 
-	private void chooseDepartureDate() {
-		WebElement departure = driver.findElement(By.xpath(DATEPICKER_INPUT_IDA));
+	private void chooseDepartureDate(String xpath) {
+		WebElement departure = driver.findElement(By.xpath(xpath));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 		departure.sendKeys(del + format.format(earliestDepartureHour.getTime()));
 	}
 
-	private void chooseReturnDate() {
-		WebElement returndt = driver.findElement(By.xpath(DATEPICKER_INPUT_VOLTA));
+	private void chooseReturnDate(String xpath) {
+		WebElement returndt = driver.findElement(By.xpath(xpath));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 		returndt.sendKeys(del + format.format(latestReturnDate.getTime()));
@@ -273,7 +479,7 @@ public class Search {
 
 	private void chooseFromItemList(List<WebElement> listItem, NationalAirports destination) {
 		StringBuilder builder = new StringBuilder();
-		builder.append("(").append(destination.code()).append(")");
+		builder.append("(").append(destination.toString()).append(")");
 		for (WebElement webElement : listItem) {
 			if (webElement.getText().contains(builder.toString())) {
 				webElement.click();
@@ -290,8 +496,13 @@ public class Search {
 	}
 
 	private void waitPageLoaded() {
-		WebDriverWait wait = new WebDriverWait(driver, 45);
+		WebDriverWait wait = new WebDriverWait(driver, 60);
 		wait.until(ExpectedConditions.refreshed(new WaitPageLoad()));
+	}
+
+	private void waitElementVisible(String xpath) {
+		WebDriverWait wait = new WebDriverWait(driver, 60);
+		wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
 	}
 
 	private WebDriver navigateThroughInternalFramesGol() {
@@ -335,29 +546,7 @@ public class Search {
 	}
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 		Search execute = new Search();
-		execute.SearchGol();
-		
-//		try {
-//			Date data = df.parse("10/10/2014 23:12");
-//			Date data2 = df.parse("10/10/2014 23:14");
-//			Calendar calendar = GregorianCalendar.getInstance(Locale.US);
-//			Calendar calendar2 = GregorianCalendar.getInstance(Locale.US);
-//			calendar.setTime(data);
-//			calendar2.setTime(data2);
-//			System.out.println(calendar.getTime());
-//			
-//			if(calendar2.before(calendar)){
-//				System.out.println("2 antes do 1");
-//			}
-//		} catch (ParseException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-////		}
-		
-		// SplitCityNameCode nameSplit = new SplitCityNameCode();
-		// nameSplit.splitExtractListCities();
-
+		execute.SearchTam();
 	}
 }

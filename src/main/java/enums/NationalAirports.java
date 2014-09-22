@@ -1,8 +1,8 @@
 package enums;
 
 public enum NationalAirports {
-	SP_Guarulhos("GRU"),SP_Congonhas("CGN"),SP_TODOS("SAO"),SP_Viracopos("VCP"), SC_Florianopolis("FLN"), GO_Goiania(
-			"GYN"), MG_Confins("CFN"), MG_Pampulha("PMP"), RS_PortoAlegre("POA"), RS_CaxiasDoSul("CXS");
+	GRU("SP_Guarulhos"), CGH("SP_Congonhas"), SAO("SP_Todos"), VCP("SP_Viracopos"), FLN("SC_Florianopolis"), GYN("GO_Goiania"), CFN("MG_Confins"), PMP(
+			"MG_Pampulha"), POA("RS_PortoAlegre"), CXS("RS_CaxiasDoSul");
 
 	private String value;
 
