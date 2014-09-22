@@ -44,7 +44,7 @@ public class Search {
 	private String loginNameTam;
 	private String pswdNameGol;
 	private String pswdNameTam;
-	private NationalAirports from;
+	private ArrayList<NationalAirports> from;
 	private ArrayList<NationalAirports> to;
 	private WebDriver driver;
 
@@ -111,10 +111,15 @@ public class Search {
 		pswdNameGol = mapping.get(Login.passwordGol.getValue());
 		pswdNameTam = mapping.get(Login.passwordTam.getValue());
 
-		from = NationalAirports.SAO;
+		from = new ArrayList<NationalAirports>();
 		to = new ArrayList<NationalAirports>();
-		to.add(NationalAirports.FLN);
-		to.add(NationalAirports.CFN);
+
+		from.add(NationalAirports.CXJ);
+		from.add(NationalAirports.POA);
+		from.add(NationalAirports.FLN);
+		from.add(NationalAirports.NVT);
+
+		to.add(NationalAirports.SAO);
 
 		maximumMilesLimit = 16000;
 		maximumAmountLimit = 500;
@@ -146,17 +151,21 @@ public class Search {
 			loginPageGol();// TODO: Iterate over varios destinations
 
 			smilesPage();
-			smilesSearchPage(from, to.get(0));
-			extractFlightDetails(to.get(0));
+			for (NationalAirports dep : from) {
+				for (NationalAirports des : to) {
+					smilesSearchPage(dep, des);
+					extractFlightDetails(dep, des);
 
-			while (lastAvailableTravellingDate.after(latestReturnDate)) {
-				this.forwardPeriod();
-				nextSearchPage();
-				extractFlightDetails(to.get(0));
+					while (lastAvailableTravellingDate.after(latestReturnDate)) {
+						this.forwardPeriod();
+						nextSearchPage();
+						extractFlightDetails(dep, des);
+					}
+					Collections.sort(matches);
+					writeOutFileResults(matches, dep, des, "GOL");
+				}
 			}
 
-			Collections.sort(matches);
-			writeOutFileResults(matches, from, to.get(0), "GOL");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		} finally {
@@ -176,26 +185,26 @@ public class Search {
 		}
 	}
 
-	public void extractFlightDetails(NationalAirports to) {
+	public void extractFlightDetails(NationalAirports dep, NationalAirports des) {
 		waitPageLoaded();
 
 		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, earliestDepartureHour, latestReturnDate);
 		// departure flights
 		List<WebElement> departures = driver.findElements(By.xpath("id('site')/div[6]/div[3]/div"));
 		departures.remove(0);// remove header
-		searchMatches.setDepartureFlights(extractListDetails(departures, earliestDepartureHour, to));
+		searchMatches.setDepartureFlights(extractListDetails(departures, earliestDepartureHour, dep, des));
 
 		// return flights
 		List<WebElement> arrives = driver.findElements(By.xpath("id('site')/div[7]/div[3]/div"));
 		arrives.remove(0);// remove header
 
-		searchMatches.setReturnFlights(extractListDetails(arrives, latestReturnDate, to));
+		searchMatches.setReturnFlights(extractListDetails(arrives, latestReturnDate, dep, des));
 
 		matches.addAll(searchMatches.bestMilesFares());
 
 	}
 
-	private ArrayList<FlightDetails> extractListDetails(List<WebElement> details, Calendar flightTime, NationalAirports to) {
+	private ArrayList<FlightDetails> extractListDetails(List<WebElement> details, Calendar flightTime, NationalAirports dep, NationalAirports des) {
 		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
 
 		for (WebElement webElement : details) {
@@ -210,12 +219,10 @@ public class Search {
 			// TODO: verificar o conflitos de datas fixas do voo de partida e
 			// chegada (podem ocorrer em dias diferentes e consequentemnte em
 			// anos diferentes)
-			Calendar departureDate = ParserFlight.returnCalendar(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
-					flightTime.get(Calendar.YEAR));
-			Calendar returnDate = ParserFlight.returnCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
-					flightTime.get(Calendar.YEAR));
+			Calendar departureDate = ParserFlight.returnCalendar(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
+			Calendar returnDate = ParserFlight.returnCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
 
-			FlightDetails flight = ParserFlight.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), from, to);
+			FlightDetails flight = ParserFlight.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), dep, des);
 			if (flight != null) {
 				listaFlights.add(flight);
 			}
@@ -227,19 +234,23 @@ public class Search {
 	public void SearchTam() {
 		try {
 			loginPageTam();
-			searchMultiplus();
+			for (NationalAirports dep : from) {
+				for (NationalAirports des : to) {
+					searchMultiplus();
 
-			waitPageLoaded();
-			extractFlightDetailsMultiplus();
+					waitPageLoaded();
+					extractFlightDetailsMultiplus();
 
-			while (lastAvailableTravellingDate.after(latestReturnDate)) {
-				this.forwardPeriod();
-				loopSearchMultiPlus();
-				extractFlightDetailsMultiplus();
+					while (lastAvailableTravellingDate.after(latestReturnDate)) {
+						this.forwardPeriod();
+						loopSearchMultiPlus();
+						extractFlightDetailsMultiplus();
+					}
+
+					Collections.sort(matches);
+					writeOutFileResults(matches, dep, des, "TAM");
+				}
 			}
-
-			Collections.sort(matches);
-			writeOutFileResults(matches, from, to.get(0), "TAM");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		} finally {
@@ -275,7 +286,7 @@ public class Search {
 		WebElement departureResults = driver.findElement(By.xpath(".//*[@id='outbound_list_flight_direct']/tbody"));
 		List<WebElement> outboundsTR = departureResults.findElements(By.cssSelector(".flight"));
 		ArrayList<FlightDetails> outboundsDeparture = new ArrayList<FlightDetails>();
-		
+
 		for (WebElement webElement : outboundsTR) {
 			List<WebElement> outboundsTD = webElement.findElements(By.cssSelector("td"));
 
@@ -290,9 +301,9 @@ public class Search {
 			String milesIrrestrito = "-----";
 			if (outboundsTD.size() > 6) {
 				milesIrrestrito = extractFaresMultiPlus(outboundsTD.get(6).getText());// milhas
-																								// Irrestrito
+																						// Irrestrito
 			}
-			
+
 			String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
 			Calendar outbound = convertCalendar(detailsOutbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH), earliestDepartureHour.get(Calendar.YEAR));
 			Calendar inbound = convertCalendar(detailsInbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH), earliestDepartureHour.get(Calendar.YEAR));
@@ -302,7 +313,7 @@ public class Search {
 				outboundsDeparture.add(flight);
 			}
 		}
-		
+
 		WebElement returnResults = driver.findElement(By.xpath(".//*[@id='inbound_list_flight_direct']/tbody"));
 		List<WebElement> outboundsReturnTR = returnResults.findElements(By.cssSelector(".flight"));
 		ArrayList<FlightDetails> outboundsReturn = new ArrayList<FlightDetails>();
@@ -320,19 +331,19 @@ public class Search {
 			String milesIrrestrito = "-----";
 			if (outboundsTD.size() > 6) {
 				milesIrrestrito = extractFaresMultiPlus(outboundsTD.get(6).getText());// milhas
-																								// Irrestrito
+																						// Irrestrito
 			}
 			String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
 			Calendar outbound = convertCalendar(detailsOutbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH), latestReturnDate.get(Calendar.YEAR));
 			Calendar inbound = convertCalendar(detailsInbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH), latestReturnDate.get(Calendar.YEAR));
-			
-			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]), NationalAirports.valueOf(detailsInbound[1]));			
+
+			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]), NationalAirports.valueOf(detailsInbound[1]));
 			if (flight != null) {
 				outboundsReturn.add(flight);
 			}
 		}
-		
-		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, earliestDepartureHour, latestReturnDate);		
+
+		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, earliestDepartureHour, latestReturnDate);
 		searchMatches.setDepartureFlights(outboundsDeparture);
 		searchMatches.setReturnFlights(outboundsReturn);
 
@@ -341,7 +352,7 @@ public class Search {
 
 	private String cheapestFare(String milesPromo, String milesClassico, String milesIrrestrito) {
 		Integer temp = this.maximumMilesLimit + 1;
-		String amount = temp.toString();//set above the limit
+		String amount = temp.toString();// set above the limit
 
 		boolean keepSearching = true;
 
@@ -365,7 +376,7 @@ public class Search {
 			try {
 				amount = milesIrrestrito;
 			} catch (Exception ex) {
-				
+
 			}
 		}
 
