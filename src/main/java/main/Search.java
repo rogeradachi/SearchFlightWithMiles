@@ -27,6 +27,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import bycompany.GolNationalAttendedAirports;
 import bycompany.TamNationalAttendedAirports;
 import util.FileStream;
+import util.Help;
 import util.ParserFlight;
 import conditional.WaitPageLoad;
 import enums.Login;
@@ -147,8 +148,8 @@ public class Search {
 		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
 
 		latestReturnDate.add(Calendar.DATE, forwardDays);
-		latestReturnDate.add(Calendar.HOUR_OF_DAY, returnHour);
-		latestReturnDate.add(Calendar.MINUTE, returnMinute);
+		latestReturnDate.set(Calendar.HOUR_OF_DAY, returnHour);
+		latestReturnDate.set(Calendar.MINUTE, returnMinute);
 	}
 
 	public void SearchGol() {
@@ -158,13 +159,7 @@ public class Search {
 
 			smilesPage();
 			for (NationalAirports dep : from) {
-				if (!GolNationalAttendedAirports.attendsAirport(dep)) {
-					break;
-				}
 				for (NationalAirports des : to) {
-					if (!GolNationalAttendedAirports.attendsAirport(des)) {
-						break;
-					}
 					smilesSearchPage(dep, des);
 					extractFlightDetails(dep, des, oneWay);
 
@@ -244,10 +239,8 @@ public class Search {
 			// TODO: verificar o conflitos de datas fixas do voo de partida e
 			// chegada (podem ocorrer em dias diferentes e consequentemnte em
 			// anos diferentes)
-			Calendar departureDate = ParserFlight.returnCalendar(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
-					flightTime.get(Calendar.YEAR));
-			Calendar returnDate = ParserFlight.returnCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
-					flightTime.get(Calendar.YEAR));
+			Calendar departureDate = ParserFlight.returnCalendar(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
+			Calendar returnDate = ParserFlight.returnCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
 
 			FlightDetails flight = ParserFlight.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), dep, des);
 			if (flight != null) {
@@ -261,25 +254,32 @@ public class Search {
 	public void SearchTam() {
 		try {
 			loginPageTam();
-			for (NationalAirports dep : from) {
-				if (TamNationalAttendedAirports.hasTamAirport(dep)) {
-					for (NationalAirports des : to) {
-						if (TamNationalAttendedAirports.hasTamAirport(des)) {
-							searchMultiplus(dep, des);
+			ArrayList<NationalAirports> attendedFrom = Help.attendedByTam(from);
+			ArrayList<NationalAirports> attendedTo = Help.attendedByTam(to);
 
-							waitPageLoaded();
-							extractFlightDetailsMultiplus();
-
-							while (lastAvailableTravellingDate.after(latestReturnDate)) {
-								this.forwardPeriod();
-								loopSearchMultiPlus();
-								extractFlightDetailsMultiplus();
-							}
-
-							Collections.sort(matches);
-							writeOutFileResults(matches, dep, des, "TAM");
-						}
+			boolean homepage = true;
+			for (NationalAirports dep : attendedFrom) {
+				for (NationalAirports des : attendedTo) {
+					if (homepage) {
+						searchMultiplus(dep, des);
+					} else {
+						loopSearchMultiPlus();
 					}
+
+					waitPageLoaded();
+					extractFlightDetailsMultiplus();
+
+					homepage = false;
+
+					while (lastAvailableTravellingDate.after(latestReturnDate)) {
+						this.forwardPeriod();
+						loopSearchMultiPlus();
+						extractFlightDetailsMultiplus();
+					}
+
+					Collections.sort(matches);
+					writeOutFileResults(matches, dep, des, "TAM");
+
 				}
 			}
 		} catch (Exception ex) {
@@ -294,23 +294,26 @@ public class Search {
 		waitElementVisible(".//*[@id='passenger_useMyPoints']");
 		driver.findElement(By.xpath(".//*[@id='passenger_useMyPoints']")).click();
 
-		chooseDepartureDate(".//*[@id='search_outbound_date']");
-		chooseReturnDate(".//*[@id='search_inbound_date']");
-
 		inputOutboundAirport(".//*[@id='search_from']", from);
 		inputInboundAirport(".//*[@id='search_to']", to);
 
-		driver.findElement(By.xpath(".//*[@id='onlineSearchSubmitButton']")).click();
+		chooseDepartureDate(".//*[@id='search_outbound_date']");
+		chooseReturnDate(".//*[@id='search_inbound_date']");
 
+		driver.findElement(By.xpath(".//*[@id='onlineSearchSubmitButton']")).click();
 	}
 
 	public void loopSearchMultiPlus() {
 		chooseDepartureDate(".//*[@id='search_outbound_date']");
 		chooseReturnDate(".//*[@id='search_inbound_date']");
 
-		driver.findElement(By.xpath(".//*[@id='searchPanel']/footer/button")).click();
-		// Id: departure Airport = .//*[@id='search_from']
-		// Id: arrive Airport = .//*[@id='search_to']
+		if (Help.exists(driver, "id('ui-datepicker-div')/x:div[4]/x:button[2]")) {
+			driver.findElement(By.xpath("id('ui-datepicker-div')/x:div[4]/x:button[2]")).click();
+		}
+
+		if (Help.exists(driver, ".//*[@id='searchPanel']/footer/button")) {
+			driver.findElement(By.xpath(".//*[@id='searchPanel']/footer/button")).click();
+		}
 	}
 
 	public void extractFlightDetailsMultiplus() {
@@ -326,27 +329,23 @@ public class Search {
 			String code = outboundsTD.get(2).getText();// codigo do voo
 			String duration = outboundsTD.get(3).getText();// duração
 			String milesPromo = extractFaresMultiPlus(outboundsTD.get(4).getText());// milhas
-			
-			String milesClassico= "-----";
+
+			String milesClassico = "-----";
 			String milesIrrestrito = "-----";// PROMO
 			if (outboundsTD.size() > 5) {
 				milesClassico = extractFaresMultiPlus(outboundsTD.get(5).getText());// milhas
-																						// classico
+																					// classico
 				if (outboundsTD.size() > 6) {
 					milesIrrestrito = extractFaresMultiPlus(outboundsTD.get(6).getText());// milhas
 																							// Irrestrito
 				}
-			}			
-			
+			}
 
 			String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
-			Calendar outbound = convertCalendar(detailsOutbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH),
-					earliestDepartureHour.get(Calendar.YEAR));
-			Calendar inbound = convertCalendar(detailsInbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH),
-					earliestDepartureHour.get(Calendar.YEAR));
+			Calendar outbound = convertCalendar(detailsOutbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH), earliestDepartureHour.get(Calendar.YEAR));
+			Calendar inbound = convertCalendar(detailsInbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH), earliestDepartureHour.get(Calendar.YEAR));
 
-			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]),
-					NationalAirports.valueOf(detailsInbound[1]));
+			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]), NationalAirports.valueOf(detailsInbound[1]));
 			if (flight != null) {
 				outboundsDeparture.add(flight);
 			}
@@ -363,25 +362,22 @@ public class Search {
 			String code = outboundsTD.get(2).getText();// codigo do voo
 			String duration = outboundsTD.get(3).getText();// duração
 			String milesPromo = extractFaresMultiPlus(outboundsTD.get(4).getText());// milhas
-																					// PROMO			
-			String milesClassico= "-----";
+																					// PROMO
+			String milesClassico = "-----";
 			String milesIrrestrito = "-----";
 			if (outboundsTD.size() > 5) {
 				milesClassico = extractFaresMultiPlus(outboundsTD.get(5).getText());// milhas
-																						// classico
+																					// classico
 				if (outboundsTD.size() > 6) {
 					milesIrrestrito = extractFaresMultiPlus(outboundsTD.get(6).getText());// milhas
 																							// Irrestrito
 				}
-			}			
+			}
 			String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
-			Calendar outbound = convertCalendar(detailsOutbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH),
-					latestReturnDate.get(Calendar.YEAR));
-			Calendar inbound = convertCalendar(detailsInbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH),
-					latestReturnDate.get(Calendar.YEAR));
+			Calendar outbound = convertCalendar(detailsOutbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH), latestReturnDate.get(Calendar.YEAR));
+			Calendar inbound = convertCalendar(detailsInbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH), latestReturnDate.get(Calendar.YEAR));
 
-			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]),
-					NationalAirports.valueOf(detailsInbound[1]));
+			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]), NationalAirports.valueOf(detailsInbound[1]));
 			if (flight != null) {
 				outboundsReturn.add(flight);
 			}
