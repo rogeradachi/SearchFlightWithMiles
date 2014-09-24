@@ -13,6 +13,8 @@ public class FlightMatches {
 	private Calendar earliestDepartureTime;
 	private Calendar latestReturnTime;
 
+	private boolean oneWay;
+
 	public FlightMatches() {
 		this.amountLimit = 300;
 		this.milesLimit = 16000;
@@ -23,16 +25,28 @@ public class FlightMatches {
 		this.milesLimit = milesLimit;
 		this.earliestDepartureTime = earliestDepartureTime;
 		this.latestReturnTime = latestReturnTime;
+		this.oneWay = false;
+	}
+
+	public FlightMatches(int amountLimit, int milesLimit, Calendar earliestDepartureTime) {
+		this.amountLimit = amountLimit;
+		this.milesLimit = milesLimit;
+		this.earliestDepartureTime = earliestDepartureTime;
+		this.oneWay = true;
 	}
 
 	public ArrayList<FlightDetails> bestFares() {
 		ArrayList<FlightDetails> bestFares = new ArrayList<FlightDetails>();
 		this.excludesFlightsNotInTheInterval();
 
-		for (FlightDetails departure : departureFlights) {
-			for (FlightDetails returning : returnFlights) {
-				if (departure.getAmount() + returning.getAmount() <= amountLimit) {
-					bestFares.add(mergeFlightDetails(departure, returning));
+		if (oneWay) {
+			return departureFlights;
+		} else {
+			for (FlightDetails departure : departureFlights) {
+				for (FlightDetails returning : returnFlights) {
+					if (departure.getAmount() + returning.getAmount() <= amountLimit) {
+						bestFares.add(mergeFlightDetails(departure, returning));
+					}
 				}
 			}
 		}
@@ -44,21 +58,27 @@ public class FlightMatches {
 		ArrayList<FlightDetails> bestFares = new ArrayList<FlightDetails>();
 		this.excludesFlightsNotInTheInterval();
 
-		for (FlightDetails departure : departureFlights) {
-			for (FlightDetails returning : returnFlights) {
-				if (departure.getAmount() + returning.getAmount() <= milesLimit) {
-					bestFares.add(mergeFlightDetails(departure, returning));
+		if (oneWay) {
+			return departureFlights;
+		} else {
+			for (FlightDetails departure : departureFlights) {
+				for (FlightDetails returning : returnFlights) {
+					if (departure.getAmount() + returning.getAmount() <= milesLimit) {
+						bestFares.add(mergeFlightDetails(departure, returning));
+					}
 				}
 			}
 		}
-
 		return bestFares;
 	}
 
 	/**
 	 * Merge details from departure and returning flights
-	 * @param departureFlight departure flights details
-	 * @param returnFlight return flights details
+	 * 
+	 * @param departureFlight
+	 *            departure flights details
+	 * @param returnFlight
+	 *            return flights details
 	 * @return merged details
 	 */
 	public FlightDetails mergeFlightDetails(FlightDetails departureFlight, FlightDetails returnFlight) {
@@ -72,11 +92,15 @@ public class FlightMatches {
 		return merged;
 	}
 
-	public void orderFlightsByFares() {
+	private void excludesFlightsNotInTheInterval() {
+		this.excludesDepartureFlightsNotInTheInterval();
 
+		if (!oneWay) {
+			this.excludesReturnFlightsNotInTheInterval();
+		}
 	}
 
-	private void excludesFlightsNotInTheInterval() {
+	private void excludesDepartureFlightsNotInTheInterval() {
 		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();
 		for (FlightDetails flightDetails : departureFlights) {
 			if (flightDetails.getFlightTime().before(earliestDepartureTime)) {
@@ -84,8 +108,10 @@ public class FlightMatches {
 			}
 		}
 		departureFlights.removeAll(exclusions);
-		exclusions.clear();
+	}
 
+	private void excludesReturnFlightsNotInTheInterval() {
+		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();
 		for (FlightDetails flightDetails2 : returnFlights) {
 			if (flightDetails2.getFlightTime().after(latestReturnTime)) {
 				exclusions.add(flightDetails2);

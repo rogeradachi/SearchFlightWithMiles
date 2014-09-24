@@ -1,6 +1,7 @@
 package enums;
 
 public enum NationalAirports {
+	//TODO: verificar a ausência de outros aeroportos
 	BSB("DF_Brasília"), CGH("SP_Congonhas"), GIG("RJ_Galeão"), SSA("BA_Salvador"), FLN("SC_Florianópolis"), POA("RS_Porto_Alegre"), VCP("SP_Campinas"), REC("PE_Recife"), CWB("PR_Curitiba"), BEL("PA_Belém"), VIX("ES_Vitória"), SDU(
 			"RJ_Santos_Dumont"), CGB("MT_Cuiabá"), CGR("MS_Campo_Grande"), FOR("CE_Fortaleza"), MCP("AP_Macapá"), MGF("PR_Maringá"), GYN("GO_Goiânia"), NVT("SC_Navegantes"), MAO("AM_Manaus"), NAT("RN_Natal"), BPS("BA_Porto_Seguro"), MCZ(
 			"AL_Maceió"), PMW("TO_Palmas"), SLZ("MA_São_Luis"), GRU("SP_Guarulhos"), LDB("PR_Londrina"), PVH("RO_Porto_Velho"), RBR("AC_Rio_Branco"), JOI("SC_Joinville"), UDI("MG_Uberlândia"), CXJ("RS_Caxias_do_Sul"), IGU(
