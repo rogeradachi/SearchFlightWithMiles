@@ -56,6 +56,8 @@ public class Search {
 
 	private Calendar earliestDepartureHour;
 	private Calendar latestReturnDate;
+	private final Calendar firstEarliestDepartureHour;
+	private final Calendar firstLatestReturnDate;
 	private Calendar lastAvailableTravellingDate;
 	private int departureYear;
 	private int departureMonth;
@@ -84,6 +86,8 @@ public class Search {
 		driver = new FirefoxDriver();
 		earliestDepartureHour = GregorianCalendar.getInstance(Locale.US);
 		latestReturnDate = GregorianCalendar.getInstance(Locale.US);
+		firstEarliestDepartureHour = GregorianCalendar.getInstance(Locale.US);
+		firstLatestReturnDate = GregorianCalendar.getInstance(Locale.US);
 		lastAvailableTravellingDate = GregorianCalendar.getInstance(Locale.US);
 
 		departureYear = 2014;
@@ -102,9 +106,12 @@ public class Search {
 
 		oneWay = false;
 
-		earliestDepartureHour.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
-		latestReturnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);
-		lastAvailableTravellingDate.set(2014, Calendar.OCTOBER, 16, returnHour, returnMinute);
+		firstEarliestDepartureHour.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
+		firstLatestReturnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);
+
+		earliestDepartureHour = (Calendar) firstEarliestDepartureHour.clone();
+		latestReturnDate = (Calendar) firstLatestReturnDate.clone();
+		lastAvailableTravellingDate.set(2014, Calendar.OCTOBER, 7, returnHour, returnMinute);
 
 		matches = new ArrayList<FlightDetails>();
 		init();
@@ -122,8 +129,8 @@ public class Search {
 		to = new ArrayList<NationalAirports>();
 
 		from.add(NationalAirports.CXJ);
-		from.add(NationalAirports.POA);
 		from.add(NationalAirports.FLN);
+		from.add(NationalAirports.POA);
 		from.add(NationalAirports.NVT);
 
 		to.add(NationalAirports.SAO);
@@ -158,9 +165,18 @@ public class Search {
 			loginPageGol();// TODO: Iterate over varios destinations
 
 			smilesPage();
-			for (NationalAirports dep : from) {
-				for (NationalAirports des : to) {
-					smilesSearchPage(dep, des);
+			ArrayList<NationalAirports> attendedFrom = Help.attendedByGol(from);
+			ArrayList<NationalAirports> attendedTo = Help.attendedByGol(to);
+
+			boolean nextIteraction = false;
+			for (NationalAirports dep : attendedFrom) {
+				for (NationalAirports des : attendedTo) {
+					if (!nextIteraction) {
+						smilesSearchPage(dep, des);
+						nextIteraction = true;
+					} else {
+						smilesSearchPageLoop(dep, des);
+					}
 					extractFlightDetails(dep, des, oneWay);
 
 					while (lastAvailableTravellingDate.after(latestReturnDate)) {
@@ -171,6 +187,7 @@ public class Search {
 					Collections.sort(matches);
 					writeOutFileResults(matches, dep, des, "GOL");
 				}
+				reinitializeDepartureDates();
 			}
 
 		} catch (Exception ex) {
@@ -181,14 +198,16 @@ public class Search {
 	}
 
 	private void writeOutFileResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to, String company) {
-		try {
-			FileStream.outputResults(matches, from, to, company);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if (matches != null && matches.size() > 0) {
+			try {
+				FileStream.outputResults(matches, from, to, company);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -258,12 +277,18 @@ public class Search {
 			ArrayList<NationalAirports> attendedTo = Help.attendedByTam(to);
 
 			boolean homepage = true;
+			boolean nextIteraction = false;
 			for (NationalAirports dep : attendedFrom) {
 				for (NationalAirports des : attendedTo) {
 					if (homepage) {
 						searchMultiplus(dep, des);
 					} else {
-						loopSearchMultiPlus();
+						if (!nextIteraction) {
+							loopSearchMultiPlus();
+						} else {
+							loopSearchMultiPlus(dep, des);
+							nextIteraction = false;
+						}
 					}
 
 					waitPageLoaded();
@@ -281,13 +306,20 @@ public class Search {
 					writeOutFileResults(matches, dep, des, "TAM");
 
 				}
+				nextIteraction = true;
+				reinitializeDepartureDates();
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		} finally {
-			// driver.close();
+			driver.close();
 		}
 
+	}
+
+	private void reinitializeDepartureDates() {
+		earliestDepartureHour = (Calendar) firstEarliestDepartureHour.clone();
+		latestReturnDate = (Calendar) firstLatestReturnDate.clone();
 	}
 
 	public void searchMultiplus(NationalAirports from, NationalAirports to) {
@@ -304,6 +336,23 @@ public class Search {
 	}
 
 	public void loopSearchMultiPlus() {
+
+		chooseDepartureDate(".//*[@id='search_outbound_date']");
+		chooseReturnDate(".//*[@id='search_inbound_date']");
+
+		if (Help.exists(driver, "id('ui-datepicker-div')/x:div[4]/x:button[2]")) {
+			driver.findElement(By.xpath("id('ui-datepicker-div')/x:div[4]/x:button[2]")).click();
+		}
+
+		if (Help.exists(driver, ".//*[@id='searchPanel']/footer/button")) {
+			driver.findElement(By.xpath(".//*[@id='searchPanel']/footer/button")).click();
+		}
+	}
+
+	public void loopSearchMultiPlus(NationalAirports from, NationalAirports to) {
+		inputAirportMultiplus(".//*[@id='search_from']", from);
+		inputAirportMultiplus(".//*[@id='search_to']", to);
+
 		chooseDepartureDate(".//*[@id='search_outbound_date']");
 		chooseReturnDate(".//*[@id='search_inbound_date']");
 
@@ -451,6 +500,12 @@ public class Search {
 		return extraction;
 	}
 
+	private void inputAirportMultiplus(String xpath, NationalAirports from) {
+		WebElement departure = driver.findElement(By.xpath(xpath));
+		departure.click();
+		departure.sendKeys(from.toString());
+	}
+
 	private void inputOutboundAirport(String xpath, NationalAirports from) {
 		WebElement departure = driver.findElement(By.xpath(xpath));
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
@@ -503,6 +558,27 @@ public class Search {
 		chooseReturnDate(DATEPICKER_INPUT_VOLTA);
 
 		driver.findElement(By.xpath("id('toCategory')/a")).click();
+	}
+
+	private void smilesSearchPageLoop(NationalAirports origem, NationalAirports destino) {
+		waitPageLoaded();
+
+		/* Departure Airport */
+		/* dropdown list has to become active */
+		waitElementVisible("id('fs_container_origins[0]')/a");
+		driver.findElement(By.xpath("id('fs_container_origins[0]')/a")).click();
+		List<WebElement> originLi = driver.findElements(By.xpath("id('fs_popUp_origins[0]')/ul/li"));
+		chooseFromItemList(originLi, origem);
+		/* Destination Airport */
+		/* dropdown list has to become active */
+		driver.findElement(By.xpath("id('fs_container_destinations[0]')/a")).click();
+		List<WebElement> destinationLi = driver.findElements(By.xpath("id('fs_popUp_destinations[0]')/ul/li"));
+		chooseFromItemList(destinationLi, destino);
+
+		chooseDepartureDate(DATEPICKER_INPUT_IDA);
+		chooseReturnDate(DATEPICKER_INPUT_VOLTA);
+
+		driver.findElement(By.xpath("id('search')/div[3]/a")).click();
 	}
 
 	private void nextSearchPage() {
@@ -598,6 +674,7 @@ public class Search {
 
 	public static void main(String[] args) {
 		Search execute = new Search();
-		execute.SearchTam();
+		// execute.SearchTam();
+		execute.SearchGol();
 	}
 }
