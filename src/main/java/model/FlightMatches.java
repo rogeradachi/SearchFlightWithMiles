@@ -2,22 +2,31 @@ package model;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+
+import enums.NationalAirports;
 
 public class FlightMatches {
 	private int amountLimit;
 	private int milesLimit;
 
-	private ArrayList<FlightDetails> departureFlights;
-	private ArrayList<FlightDetails> returnFlights;
+	public NationalAirports from;
+	public NationalAirports to;
+
+	private ArrayList<FlightDetails> outBoundFLights;
+	private ArrayList<FlightDetails> inBoundFlights;
+	private ArrayList<FlightDetails> bestFares;
 
 	private Calendar earliestDepartureTime;
 	private Calendar latestReturnTime;
 
 	private boolean oneWay;
 
-	public FlightMatches() {
+	public FlightMatches(NationalAirports from, NationalAirports to) {
 		this.amountLimit = 300;
 		this.milesLimit = 16000;
+		this.from = from;
+		this.to = to;
 	}
 
 	public FlightMatches(int amountLimit, int milesLimit, Calendar earliestDepartureTime, Calendar latestReturnTime) {
@@ -35,15 +44,15 @@ public class FlightMatches {
 		this.oneWay = true;
 	}
 
-	public ArrayList<FlightDetails> bestFares() {
+	public ArrayList<FlightDetails> bestCashFares() {
 		ArrayList<FlightDetails> bestFares = new ArrayList<FlightDetails>();
 		this.excludesFlightsNotInTheInterval();
 
 		if (oneWay) {
-			return departureFlights;
+			return outBoundFLights;
 		} else {
-			for (FlightDetails departure : departureFlights) {
-				for (FlightDetails returning : returnFlights) {
+			for (FlightDetails departure : outBoundFLights) {
+				for (FlightDetails returning : inBoundFlights) {
 					if (departure.getAmount() + returning.getAmount() <= amountLimit) {
 						bestFares.add(mergeFlightDetails(departure, returning));
 					}
@@ -59,17 +68,27 @@ public class FlightMatches {
 		this.excludesFlightsNotInTheInterval();
 
 		if (oneWay) {
-			return departureFlights;
+			return outBoundFLights;
 		} else {
-			for (FlightDetails departure : departureFlights) {
-				for (FlightDetails returning : returnFlights) {
+			for (FlightDetails departure : outBoundFLights) {
+				for (FlightDetails returning : inBoundFlights) {
 					if (departure.getAmount() + returning.getAmount() <= milesLimit) {
 						bestFares.add(mergeFlightDetails(departure, returning));
 					}
 				}
 			}
 		}
+
 		return bestFares;
+	}
+
+	private void clearList() {
+		if (outBoundFLights != null) {
+			this.outBoundFLights.clear();
+		}
+		if (inBoundFlights != null) {
+			this.inBoundFlights.clear();
+		}
 	}
 
 	/**
@@ -86,8 +105,8 @@ public class FlightMatches {
 
 		merged.setAmount(departureFlight.getAmount() + returnFlight.getAmount())
 				.setFlightCode(departureFlight.getFlightCode() + "/" + returnFlight.getFlightCode()).setArriveTime(returnFlight.getArriveTime())
-				.setFlightTime(departureFlight.getFlightTime()).setFrom(departureFlight.getFrom()).setTo(returnFlight.getTo()).setStopOvers(0)
-				.setFlightDuration("");
+				.setFlightTime(departureFlight.getFlightTime()).setStopOvers(0).setFlightDuration("");
+		// TODO: Get stopOvers and flying time
 
 		return merged;
 	}
@@ -102,38 +121,51 @@ public class FlightMatches {
 
 	private void excludesDepartureFlightsNotInTheInterval() {
 		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();
-		for (FlightDetails flightDetails : departureFlights) {
-			if (flightDetails.getFlightTime().before(earliestDepartureTime)) {
+		for (FlightDetails flightDetails : outBoundFLights) {
+			if (flightDetails!=null && flightDetails.getFlightTime().before(earliestDepartureTime)) {
 				exclusions.add(flightDetails);
 			}
 		}
-		departureFlights.removeAll(exclusions);
+		outBoundFLights.removeAll(exclusions);
 	}
 
 	private void excludesReturnFlightsNotInTheInterval() {
 		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();
-		for (FlightDetails flightDetails2 : returnFlights) {
-			if (flightDetails2.getFlightTime().after(latestReturnTime)) {
+		for (FlightDetails flightDetails2 : inBoundFlights) {
+			if (flightDetails2 != null && flightDetails2.getFlightTime().after(latestReturnTime)) {
 				exclusions.add(flightDetails2);
 			}
 		}
-		returnFlights.removeAll(exclusions);
+		inBoundFlights.removeAll(exclusions);
 	}
 
-	public ArrayList<FlightDetails> getDepartureFlights() {
-		return departureFlights;
+	public void addSearchMatches(ArrayList<FlightDetails> flights) {
+		if (bestFares == null) {
+			bestFares = new ArrayList<FlightDetails>();
+		}
+		this.bestFares.addAll(flights);
 	}
 
-	public void setDepartureFlights(ArrayList<FlightDetails> departureFlights) {
-		this.departureFlights = departureFlights;
+	public void sortMatches() {
+		if (bestFares != null) {
+			Collections.sort(this.bestFares);
+		}
 	}
 
-	public ArrayList<FlightDetails> getReturnFlights() {
-		return returnFlights;
+	public ArrayList<FlightDetails> getOutBoundFlights() {
+		return outBoundFLights;
 	}
 
-	public void setReturnFlights(ArrayList<FlightDetails> returnFlights) {
-		this.returnFlights = returnFlights;
+	public void setOutBoundFlights(ArrayList<FlightDetails> departureFlights) {
+		this.outBoundFLights = departureFlights;
+	}
+
+	public ArrayList<FlightDetails> getInBoundFlights() {
+		return inBoundFlights;
+	}
+
+	public void setInBoundFlights(ArrayList<FlightDetails> returnFlights) {
+		this.inBoundFlights = returnFlights;
 	}
 
 	public void setAmountLimit(int amountLimit) {
@@ -151,4 +183,17 @@ public class FlightMatches {
 	public void setLatestReturnTime(Calendar latestReturnTime) {
 		this.latestReturnTime = latestReturnTime;
 	}
+
+	public ArrayList<FlightDetails> getBestFares() {
+		return bestFares;
+	}
+
+	public void setBestFares(ArrayList<FlightDetails> bestFares) {
+		this.bestFares = bestFares;
+	}
+
+	public String getKey() {
+		return this.from.code() + "-" + this.to.code();
+	}
+
 }

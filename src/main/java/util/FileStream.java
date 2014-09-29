@@ -16,15 +16,15 @@ import enums.FileName;
 import enums.NationalAirports;
 
 public class FileStream {
-	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to, String company) throws FileNotFoundException, UnsupportedEncodingException {
+	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to) throws FileNotFoundException, UnsupportedEncodingException {
 		PrintWriter writer;
 		try {
-			String filename = String.format(FileName.resultFile.getValue(), from.code(), to.code(), company);
+			String filename = String.format(FileName.resultFile.getValue(), from.code(), to.code());
 			writer = new PrintWriter(new BufferedWriter(new FileWriter(filename, false)));
 			
 			writeHeader(writer);
 			for (FlightDetails flight: flightList){
-				writer.println(flight.toString());	
+				writer.println(from.code()+ ";"+ to.code()+ ";"+flight.toString());	
 			}
 			writer.close();
 		} catch (IOException e) {

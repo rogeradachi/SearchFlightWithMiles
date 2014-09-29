@@ -97,9 +97,9 @@ public abstract class SearchToolInstance {
 		}
 	}
 
-	private void writeOutFileResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to, String company) {
+	private void writeOutFileResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to) {
 		try {
-			FileStream.outputResults(matches, from, to, company);
+			FileStream.outputResults(matches, from, to);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

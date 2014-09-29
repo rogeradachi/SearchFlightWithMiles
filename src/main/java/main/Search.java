@@ -5,7 +5,6 @@ import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
@@ -20,18 +19,17 @@ import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import bycompany.GolNationalAttendedAirports;
-import bycompany.TamNationalAttendedAirports;
 import util.FileStream;
 import util.Help;
-import util.ParserFlight;
+import util.ParserFlightGol;
+import util.ParserFlightTam;
 import conditional.WaitPageLoad;
 import enums.Login;
 import enums.NationalAirports;
+import enums.PaymentType;
 
 public class Search {
 	private final String DD_MM_YYYY = "dd/MM/yyyy";
@@ -45,9 +43,7 @@ public class Search {
 	final String gol = "https://clientes.smiles.com.br/eloyalty_ptb/start.swe?SWECmd=GotoView&SWEView=Login%20View";
 	final String tam = "http://www.tam.com.br";
 	private String loginNameGol;
-	private String loginNameTam;
 	private String pswdNameGol;
-	private String pswdNameTam;
 	private ArrayList<NationalAirports> from;
 	private ArrayList<NationalAirports> to;
 	private WebDriver driver;
@@ -77,27 +73,27 @@ public class Search {
 	private int maximumMilesLimit;
 	private int maximumAmountLimit;
 
-	private ArrayList<FlightDetails> matches;
+	private HashMap<String, FlightMatches> resultMatches;
 
 	private Map<String, String> login;
 
 	public Search() {
 		login = new HashMap<String, String>();
-		driver = new FirefoxDriver();
+		resultMatches = new HashMap<String, FlightMatches>();
 		earliestDepartureHour = GregorianCalendar.getInstance(Locale.US);
 		latestReturnDate = GregorianCalendar.getInstance(Locale.US);
 		firstEarliestDepartureHour = GregorianCalendar.getInstance(Locale.US);
 		firstLatestReturnDate = GregorianCalendar.getInstance(Locale.US);
 		lastAvailableTravellingDate = GregorianCalendar.getInstance(Locale.US);
 
-		departureYear = 2014;
-		returnYear = 2014;
+		departureYear = 2015;
+		returnYear = 2015;
 
-		departureMonth = Calendar.SEPTEMBER;
-		returnMonth = Calendar.SEPTEMBER;
+		departureMonth = Calendar.JANUARY;
+		returnMonth = Calendar.JANUARY;
 
-		departureDay = 26;
-		returnDay = 28;
+		departureDay = 3;
+		returnDay = 5;
 
 		departureHour = 16;
 		departureMinute = 10;
@@ -111,9 +107,8 @@ public class Search {
 
 		earliestDepartureHour = (Calendar) firstEarliestDepartureHour.clone();
 		latestReturnDate = (Calendar) firstLatestReturnDate.clone();
-		lastAvailableTravellingDate.set(2014, Calendar.OCTOBER, 7, returnHour, returnMinute);
+		lastAvailableTravellingDate.set(2015, Calendar.JANUARY, 7, returnHour, returnMinute);
 
-		matches = new ArrayList<FlightDetails>();
 		init();
 	}
 
@@ -121,9 +116,7 @@ public class Search {
 
 		HashMap<String, String> mapping = FileStream.readPersonalDetailsFromFile();
 		loginNameGol = mapping.get(Login.loginGol.getValue());
-		loginNameTam = mapping.get(Login.loginTam.getValue());
 		pswdNameGol = mapping.get(Login.passwordGol.getValue());
-		pswdNameTam = mapping.get(Login.passwordTam.getValue());
 
 		from = new ArrayList<NationalAirports>();
 		to = new ArrayList<NationalAirports>();
@@ -159,33 +152,49 @@ public class Search {
 		latestReturnDate.set(Calendar.MINUTE, returnMinute);
 	}
 
-	public void SearchGol() {
+	public void SearchCheapestFlight(PaymentType type) {
+		switch (type) {
+		case miles:
+			this.SearchThrough(true, 1);
+			break;
+		case cash:
+		default:
+			// TODO: Search for cash payment flights
+			break;
+		}
+		this.outputResults();
+	}
+
+	private void SearchThrough(boolean oneWay, int forwardDays) {
+		//this.SearchGol(Help.attendedByGol(from), Help.attendedByGol(to), oneWay, forwardDays);
+		this.SearchTam(Help.attendedByTam(from), Help.attendedByTam(to), oneWay, forwardDays);
+	}
+
+	public void SearchGol(ArrayList<NationalAirports> attendedFrom, ArrayList<NationalAirports> attendedTo, boolean oneWay, int forwardDays) {
 
 		try {
-			loginPageGol();// TODO: Iterate over varios destinations
-
+			loginPageGol();
 			smilesPage();
-			ArrayList<NationalAirports> attendedFrom = Help.attendedByGol(from);
-			ArrayList<NationalAirports> attendedTo = Help.attendedByGol(to);
 
 			boolean nextIteraction = false;
+			FlightMatches matches;
 			for (NationalAirports dep : attendedFrom) {
 				for (NationalAirports des : attendedTo) {
+					matches = new FlightMatches(dep, des);
 					if (!nextIteraction) {
-						smilesSearchPage(dep, des);
+						smilesSearchPage(dep, des, oneWay);
 						nextIteraction = true;
 					} else {
-						smilesSearchPageLoop(dep, des);
+						smilesSearchPageLoop(dep, des, oneWay);
 					}
-					extractFlightDetails(dep, des, oneWay);
+					matches.addSearchMatches(extractFlightDetails(dep, des, oneWay));
 
 					while (lastAvailableTravellingDate.after(latestReturnDate)) {
-						this.forwardPeriod();
-						nextSearchPage();
-						extractFlightDetails(dep, des, oneWay);
+						this.forwardPeriod(forwardDays);
+						nextSearchPage(oneWay);
+						matches.addSearchMatches(extractFlightDetails(dep, des, oneWay));
 					}
-					Collections.sort(matches);
-					writeOutFileResults(matches, dep, des, "GOL");
+					this.addMatches(matches);
 				}
 				reinitializeDepartureDates();
 			}
@@ -197,10 +206,17 @@ public class Search {
 		}
 	}
 
-	private void writeOutFileResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to, String company) {
+	private void outputResults() {
+		for (String from_to : this.resultMatches.keySet()) {
+			FlightMatches matches = resultMatches.get(from_to);
+			writeOutSearchResults(matches.getBestFares(), matches.from, matches.to);
+		}
+	}
+
+	private void writeOutSearchResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to) {
 		if (matches != null && matches.size() > 0) {
 			try {
-				FileStream.outputResults(matches, from, to, company);
+				FileStream.outputResults(matches, from, to);
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -211,26 +227,25 @@ public class Search {
 		}
 	}
 
-	public void extractFlightDetails(NationalAirports dep, NationalAirports des, boolean oneWay) {
-		waitPageLoaded();
+	public ArrayList<FlightDetails> extractFlightDetails(NationalAirports dep, NationalAirports des, boolean oneWay) {
+		waitElementVisible("id('site')/div[6]/div[3]/div");
 
 		FlightMatches searchMatches = initFlightMatches(oneWay);
 
 		// departure flights
 		List<WebElement> departures = driver.findElements(By.xpath("id('site')/div[6]/div[3]/div"));
 		departures.remove(0);// remove header
-		searchMatches.setDepartureFlights(extractListDetails(departures, earliestDepartureHour, dep, des));
+		searchMatches.setOutBoundFlights(extractListDetails(departures, earliestDepartureHour, dep, des));
 
 		if (!oneWay) {
 			// return flights
 			List<WebElement> arrives = driver.findElements(By.xpath("id('site')/div[7]/div[3]/div"));
 			arrives.remove(0);// remove header
 
-			searchMatches.setReturnFlights(extractListDetails(arrives, latestReturnDate, dep, des));
+			searchMatches.setInBoundFlights(extractListDetails(arrives, latestReturnDate, dep, des));
 		}
 
-		matches.addAll(searchMatches.bestMilesFares());
-
+		return searchMatches.bestMilesFares();
 	}
 
 	private FlightMatches initFlightMatches(boolean oneWay) {
@@ -258,10 +273,12 @@ public class Search {
 			// TODO: verificar o conflitos de datas fixas do voo de partida e
 			// chegada (podem ocorrer em dias diferentes e consequentemnte em
 			// anos diferentes)
-			Calendar departureDate = ParserFlight.returnCalendar(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
-			Calendar returnDate = ParserFlight.returnCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
+			Calendar departureDate = ParserFlightGol.returnGolPatternCalendar(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
+					flightTime.get(Calendar.YEAR));
+			Calendar returnDate = ParserFlightGol.returnGolPatternCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
+					flightTime.get(Calendar.YEAR));
 
-			FlightDetails flight = ParserFlight.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), dep, des);
+			FlightDetails flight = ParserFlightGol.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), dep, des);
 			if (flight != null) {
 				listaFlights.add(flight);
 			}
@@ -270,41 +287,44 @@ public class Search {
 		return listaFlights;
 	}
 
-	public void SearchTam() {
+	public void SearchTam(ArrayList<NationalAirports> attendedFrom, ArrayList<NationalAirports> attendedTo, boolean oneWay, int forwardDays) {
 		try {
 			loginPageTam();
-			ArrayList<NationalAirports> attendedFrom = Help.attendedByTam(from);
-			ArrayList<NationalAirports> attendedTo = Help.attendedByTam(to);
 
 			boolean homepage = true;
 			boolean nextIteraction = false;
+			FlightMatches matches;
 			for (NationalAirports dep : attendedFrom) {
 				for (NationalAirports des : attendedTo) {
+					matches = new FlightMatches(dep, des);
 					if (homepage) {
-						searchMultiplus(dep, des);
+						searchMultiplus(dep, des, oneWay);
 					} else {
 						if (!nextIteraction) {
-							loopSearchMultiPlus();
+							loopSearchMultiPlus(oneWay);
 						} else {
-							loopSearchMultiPlus(dep, des);
+							loopSearchMultiPlus(dep, des, oneWay);
 							nextIteraction = false;
 						}
 					}
 
 					waitPageLoaded();
-					extractFlightDetailsMultiplus();
-
+					ArrayList<FlightDetails> extraction = extractFlightDetailsMultiplus(oneWay);
+					if (extraction != null) {
+						matches.addSearchMatches(extraction);
+					}
 					homepage = false;
 
 					while (lastAvailableTravellingDate.after(latestReturnDate)) {
-						this.forwardPeriod();
-						loopSearchMultiPlus();
-						extractFlightDetailsMultiplus();
+						this.forwardPeriod(forwardDays);
+						loopSearchMultiPlus(oneWay);
+						extraction = extractFlightDetailsMultiplus(oneWay);
+						if (extraction != null) {
+							matches.addSearchMatches(extraction);
+						}
+
 					}
-
-					Collections.sort(matches);
-					writeOutFileResults(matches, dep, des, "TAM");
-
+					this.addMatches(matches);
 				}
 				nextIteraction = true;
 				reinitializeDepartureDates();
@@ -322,23 +342,29 @@ public class Search {
 		latestReturnDate = (Calendar) firstLatestReturnDate.clone();
 	}
 
-	public void searchMultiplus(NationalAirports from, NationalAirports to) {
-		waitElementVisible(".//*[@id='passenger_useMyPoints']");
-		driver.findElement(By.xpath(".//*[@id='passenger_useMyPoints']")).click();
+	public void searchMultiplus(NationalAirports from, NationalAirports to, boolean oneWay) {
+		waitElementClicable(".//*[@id='passenger_useMyPoints']");
 
+		driver.findElement(By.xpath(".//*[@id='passenger_useMyPoints']")).click();
+		if (oneWay) {
+			driver.findElement(By.xpath(".//*[@id='oneway']")).click();
+		} else {
+			chooseReturnDate(".//*[@id='search_inbound_date']");
+		}
 		inputOutboundAirport(".//*[@id='search_from']", from);
 		inputInboundAirport(".//*[@id='search_to']", to);
-
 		chooseDepartureDate(".//*[@id='search_outbound_date']");
-		chooseReturnDate(".//*[@id='search_inbound_date']");
 
 		driver.findElement(By.xpath(".//*[@id='onlineSearchSubmitButton']")).click();
 	}
 
-	public void loopSearchMultiPlus() {
+	public void loopSearchMultiPlus(boolean oneWay) {
+
+		if (!oneWay) {
+			chooseReturnDate(".//*[@id='search_inbound_date']");
+		}
 
 		chooseDepartureDate(".//*[@id='search_outbound_date']");
-		chooseReturnDate(".//*[@id='search_inbound_date']");
 
 		if (Help.exists(driver, "id('ui-datepicker-div')/x:div[4]/x:button[2]")) {
 			driver.findElement(By.xpath("id('ui-datepicker-div')/x:div[4]/x:button[2]")).click();
@@ -349,12 +375,15 @@ public class Search {
 		}
 	}
 
-	public void loopSearchMultiPlus(NationalAirports from, NationalAirports to) {
+	public void loopSearchMultiPlus(NationalAirports from, NationalAirports to, boolean oneWay) {
 		inputAirportMultiplus(".//*[@id='search_from']", from);
 		inputAirportMultiplus(".//*[@id='search_to']", to);
 
 		chooseDepartureDate(".//*[@id='search_outbound_date']");
-		chooseReturnDate(".//*[@id='search_inbound_date']");
+
+		if (!oneWay) {
+			chooseReturnDate(".//*[@id='search_inbound_date']");
+		}
 
 		if (Help.exists(driver, "id('ui-datepicker-div')/x:div[4]/x:button[2]")) {
 			driver.findElement(By.xpath("id('ui-datepicker-div')/x:div[4]/x:button[2]")).click();
@@ -365,8 +394,21 @@ public class Search {
 		}
 	}
 
-	public void extractFlightDetailsMultiplus() {
-		WebElement departureResults = driver.findElement(By.xpath(".//*[@id='outbound_list_flight_direct']/tbody"));
+	public ArrayList<FlightDetails> extractFlightDetailsMultiplus(boolean oneWay) {
+		waitElementVisible(".//*[@id='outbound_list_flight_direct']/tbody");
+
+		FlightMatches searchMatches = initFlightMatches(oneWay);
+
+		WebElement departureResults;
+		WebElement departureResultsWConnections;
+		try {
+			departureResults = driver.findElement(By.xpath(".//*[@id='outbound_list_flight_direct']/tbody"));
+		} catch (Exception ex) {
+			return null;
+			// departureResultsWConnections =
+			// driver.findElement(By.xpath(".//*[@id='outbound_list_flight_connection']/tbody"));
+		}
+
 		List<WebElement> outboundsTR = departureResults.findElements(By.cssSelector(".flight"));
 		ArrayList<FlightDetails> outboundsDeparture = new ArrayList<FlightDetails>();
 
@@ -391,52 +433,59 @@ public class Search {
 			}
 
 			String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
-			Calendar outbound = convertCalendar(detailsOutbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH), earliestDepartureHour.get(Calendar.YEAR));
-			Calendar inbound = convertCalendar(detailsInbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH), earliestDepartureHour.get(Calendar.YEAR));
+			Calendar outbound = convertCalendar(detailsOutbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH),
+					earliestDepartureHour.get(Calendar.YEAR));
+			Calendar inbound = convertCalendar(detailsInbound[0], earliestDepartureHour.get(Calendar.DATE), earliestDepartureHour.get(Calendar.MONTH),
+					earliestDepartureHour.get(Calendar.YEAR));
 
-			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]), NationalAirports.valueOf(detailsInbound[1]));
+			FlightDetails flight = ParserFlightTam.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]),
+					NationalAirports.valueOf(detailsInbound[1]));
 			if (flight != null) {
 				outboundsDeparture.add(flight);
 			}
 		}
 
-		WebElement returnResults = driver.findElement(By.xpath(".//*[@id='inbound_list_flight_direct']/tbody"));
-		List<WebElement> outboundsReturnTR = returnResults.findElements(By.cssSelector(".flight"));
-		ArrayList<FlightDetails> outboundsReturn = new ArrayList<FlightDetails>();
-		for (WebElement webElement : outboundsReturnTR) {
-			List<WebElement> outboundsTD = webElement.findElements(By.cssSelector("td"));
+		searchMatches.setOutBoundFlights(outboundsDeparture);
 
-			String[] detailsOutbound = extractAirportAndFlightTimeMultiPlus(outboundsTD.get(0).getText());// saida
-			String[] detailsInbound = extractAirportAndFlightTimeMultiPlus(outboundsTD.get(1).getText());// chegada
-			String code = outboundsTD.get(2).getText();// codigo do voo
-			String duration = outboundsTD.get(3).getText();// duração
-			String milesPromo = extractFaresMultiPlus(outboundsTD.get(4).getText());// milhas
-																					// PROMO
-			String milesClassico = "-----";
-			String milesIrrestrito = "-----";
-			if (outboundsTD.size() > 5) {
-				milesClassico = extractFaresMultiPlus(outboundsTD.get(5).getText());// milhas
-																					// classico
-				if (outboundsTD.size() > 6) {
-					milesIrrestrito = extractFaresMultiPlus(outboundsTD.get(6).getText());// milhas
-																							// Irrestrito
+		if (!oneWay) {
+			WebElement returnResults = driver.findElement(By.xpath(".//*[@id='inbound_list_flight_direct']/tbody"));
+			List<WebElement> outboundsReturnTR = returnResults.findElements(By.cssSelector(".flight"));
+			ArrayList<FlightDetails> outboundsReturn = new ArrayList<FlightDetails>();
+			for (WebElement webElement : outboundsReturnTR) {
+				List<WebElement> outboundsTD = webElement.findElements(By.cssSelector("td"));
+
+				String[] detailsOutbound = extractAirportAndFlightTimeMultiPlus(outboundsTD.get(0).getText());// saida
+				String[] detailsInbound = extractAirportAndFlightTimeMultiPlus(outboundsTD.get(1).getText());// chegada
+				String code = outboundsTD.get(2).getText();// codigo do voo
+				String duration = outboundsTD.get(3).getText();// duração
+				String milesPromo = extractFaresMultiPlus(outboundsTD.get(4).getText());// milhas
+																						// PROMO
+				String milesClassico = "-----";
+				String milesIrrestrito = "-----";
+				if (outboundsTD.size() > 5) {
+					milesClassico = extractFaresMultiPlus(outboundsTD.get(5).getText());// milhas
+																						// classico
+					if (outboundsTD.size() > 6) {
+						milesIrrestrito = extractFaresMultiPlus(outboundsTD.get(6).getText());// milhas
+																								// Irrestrito
+					}
+				}
+				String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
+				Calendar outbound = convertCalendar(detailsOutbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH),
+						latestReturnDate.get(Calendar.YEAR));
+				Calendar inbound = convertCalendar(detailsInbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH),
+						latestReturnDate.get(Calendar.YEAR));
+
+				FlightDetails flight = ParserFlightTam.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]),
+						NationalAirports.valueOf(detailsInbound[1]));
+				if (flight != null) {
+					outboundsReturn.add(flight);
 				}
 			}
-			String fare = cheapestFare(milesPromo, milesClassico, milesIrrestrito);
-			Calendar outbound = convertCalendar(detailsOutbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH), latestReturnDate.get(Calendar.YEAR));
-			Calendar inbound = convertCalendar(detailsInbound[0], latestReturnDate.get(Calendar.DATE), latestReturnDate.get(Calendar.MONTH), latestReturnDate.get(Calendar.YEAR));
-
-			FlightDetails flight = ParserFlight.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]), NationalAirports.valueOf(detailsInbound[1]));
-			if (flight != null) {
-				outboundsReturn.add(flight);
-			}
+			searchMatches.setInBoundFlights(outboundsReturn);
 		}
 
-		FlightMatches searchMatches = new FlightMatches(maximumAmountLimit, maximumMilesLimit, earliestDepartureHour, latestReturnDate);
-		searchMatches.setDepartureFlights(outboundsDeparture);
-		searchMatches.setReturnFlights(outboundsReturn);
-
-		matches.addAll(searchMatches.bestMilesFares());
+		return searchMatches.bestMilesFares();
 	}
 
 	private String cheapestFare(String milesPromo, String milesClassico, String milesIrrestrito) {
@@ -519,6 +568,7 @@ public class Search {
 	}
 
 	private void loginPageGol() {
+		driver = new FirefoxDriver();
 		driver.get(gol);
 
 		waitPageLoaded();
@@ -536,39 +586,47 @@ public class Search {
 		driver.findElement(By.id(golGoToTicketsId)).click();
 	}
 
-	private void smilesSearchPage(NationalAirports origem, NationalAirports destino) {
+	private void smilesSearchPage(NationalAirports origem, NationalAirports destino, boolean oneWay) {
 		waitPageLoaded();
 
 		navigateThroughInternalFramesSearch();
 
 		waitPageLoaded();
+
+		if (oneWay) {
+			waitElementClicable(".//*[@id='tripRadio']/li[2]/input");
+			driver.findElement(By.xpath(".//*[@id='tripRadio']/li[2]/input")).click();
+		}
 		/* Departure Airport */
 		/* dropdown list has to become active */
-		waitElementVisible("id('fs_container_origins[0]')/a");
+		waitElementClicable("id('fs_container_origins[0]')/a");
 		driver.findElement(By.xpath("id('fs_container_origins[0]')/a")).click();
 		List<WebElement> originLi = driver.findElements(By.xpath("id('fs_popUp_origins[0]')/ul/li"));
 		chooseFromItemList(originLi, origem);
+
 		/* Destination Airport */
 		/* dropdown list has to become active */
 		driver.findElement(By.xpath("id('fs_container_destinations[0]')/a")).click();
 		List<WebElement> destinationLi = driver.findElements(By.xpath("id('fs_popUp_destinations[0]')/ul/li"));
 		chooseFromItemList(destinationLi, destino);
-
+		if (!oneWay) {
+			chooseReturnDate(DATEPICKER_INPUT_VOLTA);
+		}
 		chooseDepartureDate(DATEPICKER_INPUT_IDA);
-		chooseReturnDate(DATEPICKER_INPUT_VOLTA);
 
 		driver.findElement(By.xpath("id('toCategory')/a")).click();
 	}
 
-	private void smilesSearchPageLoop(NationalAirports origem, NationalAirports destino) {
+	private void smilesSearchPageLoop(NationalAirports origem, NationalAirports destino, boolean oneWay) {
 		waitPageLoaded();
 
 		/* Departure Airport */
 		/* dropdown list has to become active */
-		waitElementVisible("id('fs_container_origins[0]')/a");
+		waitElementClicable("id('fs_container_origins[0]')/a");
 		driver.findElement(By.xpath("id('fs_container_origins[0]')/a")).click();
 		List<WebElement> originLi = driver.findElements(By.xpath("id('fs_popUp_origins[0]')/ul/li"));
 		chooseFromItemList(originLi, origem);
+
 		/* Destination Airport */
 		/* dropdown list has to become active */
 		driver.findElement(By.xpath("id('fs_container_destinations[0]')/a")).click();
@@ -576,21 +634,26 @@ public class Search {
 		chooseFromItemList(destinationLi, destino);
 
 		chooseDepartureDate(DATEPICKER_INPUT_IDA);
-		chooseReturnDate(DATEPICKER_INPUT_VOLTA);
+		if (!oneWay) {
+			chooseReturnDate(DATEPICKER_INPUT_VOLTA);
+		}
 
 		driver.findElement(By.xpath("id('search')/div[3]/a")).click();
 	}
 
-	private void nextSearchPage() {
+	private void nextSearchPage(boolean oneWay) {
 		waitPageLoaded();
 
 		chooseDepartureDate(DATEPICKER_INPUT_IDA);
-		chooseReturnDate(DATEPICKER_INPUT_VOLTA);
+		if (!oneWay) {
+			chooseReturnDate(DATEPICKER_INPUT_VOLTA);
+		}
 
 		driver.findElement(By.xpath("id('search')/div[3]/a")).click();
 	}
 
 	private void chooseDepartureDate(String xpath) {
+		waitElementVisible(xpath);
 		WebElement departure = driver.findElement(By.xpath(xpath));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
@@ -598,6 +661,7 @@ public class Search {
 	}
 
 	private void chooseReturnDate(String xpath) {
+		waitElementVisible(xpath);
 		WebElement returndt = driver.findElement(By.xpath(xpath));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
@@ -615,6 +679,7 @@ public class Search {
 	}
 
 	private void loginPageTam() {
+		driver = new FirefoxDriver();
 		driver.get(tam);
 
 		waitPageLoaded();
@@ -624,12 +689,43 @@ public class Search {
 
 	private void waitPageLoaded() {
 		WebDriverWait wait = new WebDriverWait(driver, 60);
-		wait.until(ExpectedConditions.refreshed(new WaitPageLoad()));
+		boolean waitOver = false;
+		while (waitOver) {
+			try {
+				wait.until(ExpectedConditions.refreshed(new WaitPageLoad()));
+				waitOver = true;
+			} catch (Exception ex) {
+
+			}
+		}
 	}
 
 	private void waitElementVisible(String xpath) {
 		WebDriverWait wait = new WebDriverWait(driver, 60);
-		wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
+		boolean waitOver = false;
+		while (waitOver) {
+			try {
+				wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
+				waitOver = true;
+			} catch (Exception ex) {
+
+			}
+		}
+		
+	}
+	
+	private void waitElementClicable(String xpath) {
+		WebDriverWait wait = new WebDriverWait(driver, 60);
+		boolean waitOver = false;
+		while (waitOver) {
+			try {
+				wait.until(ExpectedConditions.elementToBeClickable(By.xpath(xpath)));
+				waitOver = true;
+			} catch (Exception ex) {
+
+			}
+		}
+		
 	}
 
 	private WebDriver navigateThroughInternalFramesGol() {
@@ -645,6 +741,20 @@ public class Search {
 		driver = driver.switchTo().frame("_sweview");
 
 		return driver;
+	}
+	
+	private void waitFrameNavigable(int frame){
+		WebDriverWait wait = new WebDriverWait(driver, 60);
+		boolean waitOver = false;
+		while (waitOver) {
+			try {
+				//wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.0));
+				waitOver = true;
+			} catch (Exception ex) {
+
+			}
+		}
+		
 	}
 
 	private WebDriver navigateThroughInternalFramesSearch() {
@@ -672,9 +782,22 @@ public class Search {
 		System.out.println(driver.getPageSource());
 	}
 
+	private void addMatches(FlightMatches searchMatches) {
+		if (searchMatches != null) {
+			searchMatches.sortMatches();
+			if (resultMatches.containsKey(searchMatches.getKey())) {
+				FlightMatches matches = resultMatches.remove(searchMatches.getKey());
+				matches.getBestFares().addAll(searchMatches.getBestFares());
+				resultMatches.put(searchMatches.getKey(), matches);
+			} else {
+				resultMatches.put(searchMatches.getKey(), searchMatches);
+			}
+		}
+
+	}
+
 	public static void main(String[] args) {
 		Search execute = new Search();
-		// execute.SearchTam();
-		execute.SearchGol();
+		execute.SearchCheapestFlight(PaymentType.miles);
 	}
 }
