@@ -124,6 +124,7 @@ public class Search {
 		from.add(NationalAirports.SAO);
 
 		to.add(NationalAirports.POA);
+		to.add(NationalAirports.CXJ);
 
 		maximumMilesLimit = 16000;
 		maximumAmountLimit = 500;
@@ -164,8 +165,8 @@ public class Search {
 
 	private void SearchThrough(boolean oneWay, int forwardDays) {
 		this.SearchGol(Help.attendedByGol(from), Help.attendedByGol(to), oneWay, forwardDays);
-		// this.SearchTam(Help.attendedByTam(from), Help.attendedByTam(to),
-		// oneWay, forwardDays);
+		reinitializeDepartureDates();
+		this.SearchTam(Help.attendedByTam(from), Help.attendedByTam(to), oneWay, forwardDays);
 	}
 
 	public void SearchGol(ArrayList<NationalAirports> attendedFrom, ArrayList<NationalAirports> attendedTo, boolean oneWay, int forwardDays) {
@@ -183,6 +184,7 @@ public class Search {
 						smilesSearchPage(dep, des, oneWay);
 						nextIteraction = true;
 					} else {
+						reinitializeDepartureDates();
 						smilesSearchPageLoop(dep, des, oneWay);
 					}
 					ArrayList<FlightDetails> extraction = extractFlightDetailsMultiplus(oneWay);
@@ -207,8 +209,7 @@ public class Search {
 					}
 					this.addMatches(matches);
 				}
-				nextIteraction = true;
-				reinitializeDepartureDates();
+				nextIteraction = true;				
 			}
 
 		} catch (Exception ex) {
@@ -317,6 +318,7 @@ public class Search {
 						if (!nextIteraction) {
 							loopSearchMultiPlus(oneWay);
 						} else {
+							reinitializeDepartureDates();
 							loopSearchMultiPlus(dep, des, oneWay);
 							nextIteraction = false;
 						}
@@ -352,7 +354,6 @@ public class Search {
 					this.addMatches(matches);
 				}
 				nextIteraction = true;
-				reinitializeDepartureDates();
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
