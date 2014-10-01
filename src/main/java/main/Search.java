@@ -86,19 +86,19 @@ public class Search {
 		firstLatestReturnDate = GregorianCalendar.getInstance(Locale.US);
 		lastAvailableTravellingDate = GregorianCalendar.getInstance(Locale.US);
 
-		departureYear = 2015;
-		returnYear = 2015;
+		departureYear = 2014;
+		returnYear = 2014;
 
-		departureMonth = Calendar.JANUARY;
-		returnMonth = Calendar.JANUARY;
+		departureMonth = Calendar.DECEMBER;
+		returnMonth = Calendar.DECEMBER;
 
-		departureDay = 3;
-		returnDay = 5;
+		departureDay = 17;
+		returnDay = 21;
 
-		departureHour = 16;
-		departureMinute = 10;
-		returnHour = 10;
-		returnMinute = 10;
+		departureHour = 8;
+		departureMinute = 00;
+		returnHour = 23;
+		returnMinute = 59;
 
 		oneWay = false;
 
@@ -107,7 +107,7 @@ public class Search {
 
 		earliestDepartureHour = (Calendar) firstEarliestDepartureHour.clone();
 		latestReturnDate = (Calendar) firstLatestReturnDate.clone();
-		lastAvailableTravellingDate.set(2015, Calendar.JANUARY, 7, returnHour, returnMinute);
+		lastAvailableTravellingDate.set(2014, Calendar.DECEMBER, 22, returnHour, returnMinute);
 
 		init();
 	}
@@ -121,12 +121,9 @@ public class Search {
 		from = new ArrayList<NationalAirports>();
 		to = new ArrayList<NationalAirports>();
 
-		from.add(NationalAirports.CXJ);
-		from.add(NationalAirports.FLN);
-		from.add(NationalAirports.POA);
-		from.add(NationalAirports.NVT);
+		from.add(NationalAirports.SAO);
 
-		to.add(NationalAirports.SAO);
+		to.add(NationalAirports.POA);
 
 		maximumMilesLimit = 16000;
 		maximumAmountLimit = 500;
@@ -166,8 +163,9 @@ public class Search {
 	}
 
 	private void SearchThrough(boolean oneWay, int forwardDays) {
-		//this.SearchGol(Help.attendedByGol(from), Help.attendedByGol(to), oneWay, forwardDays);
-		this.SearchTam(Help.attendedByTam(from), Help.attendedByTam(to), oneWay, forwardDays);
+		this.SearchGol(Help.attendedByGol(from), Help.attendedByGol(to), oneWay, forwardDays);
+		// this.SearchTam(Help.attendedByTam(from), Help.attendedByTam(to),
+		// oneWay, forwardDays);
 	}
 
 	public void SearchGol(ArrayList<NationalAirports> attendedFrom, ArrayList<NationalAirports> attendedTo, boolean oneWay, int forwardDays) {
@@ -187,15 +185,29 @@ public class Search {
 					} else {
 						smilesSearchPageLoop(dep, des, oneWay);
 					}
-					matches.addSearchMatches(extractFlightDetails(dep, des, oneWay));
-
-					while (lastAvailableTravellingDate.after(latestReturnDate)) {
-						this.forwardPeriod(forwardDays);
-						nextSearchPage(oneWay);
-						matches.addSearchMatches(extractFlightDetails(dep, des, oneWay));
+					ArrayList<FlightDetails> extraction = extractFlightDetailsMultiplus(oneWay);
+					if (extraction != null) {
+						matches.addSearchMatches(extraction);
+					}
+					if (oneWay) {
+						while (lastAvailableTravellingDate.after(earliestDepartureHour)) {
+							this.forwardPeriod(forwardDays);
+							nextSearchPage(oneWay);
+							extraction = extractFlightDetails(dep, des, oneWay);
+							if (extraction != null) {
+								matches.addSearchMatches(extraction);
+							}
+						}
+					} else {
+						while (lastAvailableTravellingDate.after(latestReturnDate)) {
+							this.forwardPeriod(forwardDays);
+							nextSearchPage(oneWay);
+							matches.addSearchMatches(extractFlightDetails(dep, des, oneWay));
+						}
 					}
 					this.addMatches(matches);
 				}
+				nextIteraction = true;
 				reinitializeDepartureDates();
 			}
 
@@ -234,7 +246,9 @@ public class Search {
 
 		// departure flights
 		List<WebElement> departures = driver.findElements(By.xpath("id('site')/div[6]/div[3]/div"));
-		departures.remove(0);// remove header
+		if (departures != null && departures.size() > 0) {
+			departures.remove(0);// remove header
+		}
 		searchMatches.setOutBoundFlights(extractListDetails(departures, earliestDepartureHour, dep, des));
 
 		if (!oneWay) {
@@ -315,14 +329,25 @@ public class Search {
 					}
 					homepage = false;
 
-					while (lastAvailableTravellingDate.after(latestReturnDate)) {
-						this.forwardPeriod(forwardDays);
-						loopSearchMultiPlus(oneWay);
-						extraction = extractFlightDetailsMultiplus(oneWay);
-						if (extraction != null) {
-							matches.addSearchMatches(extraction);
+					if (oneWay) {
+						while (lastAvailableTravellingDate.after(earliestDepartureHour)) {
+							this.forwardPeriod(forwardDays);
+							loopSearchMultiPlus(oneWay);
+							extraction = extractFlightDetailsMultiplus(oneWay);
+							if (extraction != null) {
+								matches.addSearchMatches(extraction);
+							}
 						}
+					} else {
+						while (lastAvailableTravellingDate.after(latestReturnDate)) {
+							this.forwardPeriod(forwardDays);
+							loopSearchMultiPlus(oneWay);
+							extraction = extractFlightDetailsMultiplus(oneWay);
+							if (extraction != null) {
+								matches.addSearchMatches(extraction);
+							}
 
+						}
 					}
 					this.addMatches(matches);
 				}
@@ -595,6 +620,7 @@ public class Search {
 
 		if (oneWay) {
 			waitElementClicable(".//*[@id='tripRadio']/li[2]/input");
+			waitElementVisible(".//*[@id='tripRadio']/li[2]/input");
 			driver.findElement(By.xpath(".//*[@id='tripRadio']/li[2]/input")).click();
 		}
 		/* Departure Airport */
@@ -711,9 +737,9 @@ public class Search {
 
 			}
 		}
-		
+
 	}
-	
+
 	private void waitElementClicable(String xpath) {
 		WebDriverWait wait = new WebDriverWait(driver, 60);
 		boolean waitOver = false;
@@ -725,7 +751,7 @@ public class Search {
 
 			}
 		}
-		
+
 	}
 
 	private WebDriver navigateThroughInternalFramesGol() {
@@ -742,19 +768,19 @@ public class Search {
 
 		return driver;
 	}
-	
-	private void waitFrameNavigable(int frame){
+
+	private void waitFrameNavigable(int frame) {
 		WebDriverWait wait = new WebDriverWait(driver, 60);
 		boolean waitOver = false;
 		while (waitOver) {
 			try {
-				//wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.0));
+				// wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.0));
 				waitOver = true;
 			} catch (Exception ex) {
 
 			}
 		}
-		
+
 	}
 
 	private WebDriver navigateThroughInternalFramesSearch() {
