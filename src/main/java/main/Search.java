@@ -11,8 +11,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import model.FlightDetails;
 import model.FlightMatches;
+import navigation.DateManager;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -72,6 +75,8 @@ public class Search {
 	private String returnDayofWeek;
 	private int maximumMilesLimit;
 	private int maximumAmountLimit;
+	@Inject
+	private DateManager mana;
 
 	private HashMap<String, FlightMatches> resultMatches;
 
@@ -101,6 +106,8 @@ public class Search {
 		returnMinute = 59;
 
 		oneWay = false;
+		
+		mana.setEarliestInbound(departureDay, departureMonth, departureYear, departureHour, departureMinute);
 
 		firstEarliestDepartureHour.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
 		firstLatestReturnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);
@@ -825,5 +832,17 @@ public class Search {
 	public static void main(String[] args) {
 		Search execute = new Search();
 		execute.SearchCheapestFlight(PaymentType.miles);
+	}
+
+
+
+	public DateManager getMana() {
+		return mana;
+	}
+
+
+
+	public void setMana(DateManager mana) {
+		this.mana = mana;
 	}
 }

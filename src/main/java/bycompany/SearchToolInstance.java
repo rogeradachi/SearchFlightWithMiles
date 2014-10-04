@@ -24,24 +24,6 @@ public abstract class SearchToolInstance {
 	public String url;
 	private String userName;
 	private String passwd;	
-
-	private Calendar earliestDepartureHour;
-	private Calendar latestReturnDate;
-	private Calendar lastAvailableTravellingDate;
-	private int departureYear;
-	private int departureMonth;
-	private int departureDay;
-	private int departureHour;
-	private int departureMinute;
-
-	private int returnYear;
-	private int returnMonth;
-	private int returnDay;
-	private int returnHour;
-	private int returnMinute;
-
-	private String departureDayofWeek;
-	private String returnDayofWeek;
 	private int maximumMilesLimit;
 	private int maximumAmountLimit;
 
