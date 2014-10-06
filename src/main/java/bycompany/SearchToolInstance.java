@@ -30,9 +30,6 @@ public abstract class SearchToolInstance {
 	private ArrayList<FlightDetails> matches;
 	
 	private WebDriver driver;
-
-	private NationalAirports from;
-	private ArrayList<NationalAirports> to;
 	
 	private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy hh:mm");	
 	
@@ -42,31 +39,11 @@ public abstract class SearchToolInstance {
 	public abstract void loopSearchFlights();
 	public abstract void extractFlightDetails(List<WebElement> details, Calendar flightTime, NationalAirports to);
 	
-	private void forwardPeriod() {
-		earliestDepartureHour.add(Calendar.DATE, one_week);
-		earliestDepartureHour.set(Calendar.HOUR_OF_DAY, departureHour);
-		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
-
-		latestReturnDate.add(Calendar.DATE, one_week);
-		latestReturnDate.set(Calendar.HOUR_OF_DAY, returnHour);
-		latestReturnDate.set(Calendar.MINUTE, returnMinute);
-	}
-
-	private void forwardPeriod(int forwardDays) {
-		earliestDepartureHour.add(Calendar.DATE, forwardDays);
-		earliestDepartureHour.set(Calendar.HOUR_OF_DAY, departureHour);
-		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
-
-		latestReturnDate.add(Calendar.DATE, forwardDays);
-		latestReturnDate.add(Calendar.HOUR_OF_DAY, returnHour);
-		latestReturnDate.add(Calendar.MINUTE, returnMinute);
-	}
-	
-	private void chooseReturnDate(String xpath) {
-		WebElement returndt = driver.findElement(By.xpath(xpath));
+	private void chooseDate(String xpath, Calendar date) {
+		WebElement dtInput = driver.findElement(By.xpath(xpath));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
-		returndt.sendKeys(del + format.format(latestReturnDate.getTime()));
+		dtInput.sendKeys(del + format.format(date.getTime()));
 	}
 
 	private void chooseFromItemList(List<WebElement> listItem, NationalAirports destination) {

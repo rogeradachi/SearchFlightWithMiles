@@ -52,7 +52,8 @@ public class DateManager {
 
 	public void setLatestOutbound(int day, int month, int year, int hour, int minute) {		
 		this.latestOutbound.set(year, month, day, hour, minute);
-		if (initialReturnDate == null) {
+		
+		if (initialReturnDate == null) {//set only once, the first return date.
 			initialReturnDate = (Calendar) this.latestOutbound.clone();
 		}
 	}

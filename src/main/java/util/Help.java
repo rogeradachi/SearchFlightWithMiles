@@ -24,9 +24,9 @@ public class Help {
 		ArrayList<NationalAirports> attended = new ArrayList<NationalAirports>();
 		for (int i = 0; i < airports.size(); i++) {
 			NationalAirports nationalAirports = airports.get(i);
-			if (TamNationalAttendedAirports.hasTamAirport(nationalAirports)) {
-				attended.add(nationalAirports);
-			}
+//			if (TamNationalAttendedAirports(nationalAirports)) {
+//				attended.add(nationalAirports);
+//			}
 		}
 		
 		return attended;
@@ -36,9 +36,9 @@ public class Help {
 		ArrayList<NationalAirports> attended = new ArrayList<NationalAirports>();
 		for (int i = 0; i < airports.size(); i++) {
 			NationalAirports nationalAirports = airports.get(i);
-			if (GolNationalAttendedAirports.attendsAirport(nationalAirports)) {
-				attended.add(nationalAirports);
-			}
+//			if (GolNationalAttendedAirports.attendsAirport(nationalAirports)) {
+//				attended.add(nationalAirports);
+//			}
 		}
 		
 		return attended;

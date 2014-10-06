@@ -1,7 +1,7 @@
 package enums;
 
 public enum FileName {
-	loginFile("login.txt"), resultFile("result_%s_%s.ods");
+	loginFile("login.txt"), BrazilianAirports("BrazilianAirports.txt"), TamAirports("TamAirports.txt"), GolAirports("GolAirports.txt"), resultFile("result_%s_%s.ods");
 	
 	private String value;
 
