@@ -28,14 +28,14 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import bycompany.ServedAirports;
 import bycompany.GolNationalServedAirports;
 import bycompany.TamNationalServedAirports;
-import util.FileStream;
+import util.FileReadService;
 import util.Help;
 import util.ParserFlightGol;
 import util.ParserFlightTam;
 import conditional.WaitPageLoad;
 import enums.Login;
 import enums.NationalAirports;
-import enums.PaymentType;
+import enums.FareType;
 
 public class Search {
 	private final String DD_MM_YYYY = "dd/MM/yyyy";
@@ -78,8 +78,6 @@ public class Search {
 	private String returnDayofWeek;
 	private int maximumMilesLimit;
 	private int maximumAmountLimit;
-	@Inject
-	private DateManager mana;
 
 	private HashMap<String, FlightMatches> resultMatches;
 
@@ -110,7 +108,6 @@ public class Search {
 
 		oneWay = false;
 		
-		mana.setEarliestInbound(departureDay, departureMonth, departureYear, departureHour, departureMinute);
 
 		firstEarliestDepartureHour.set(departureYear, departureMonth, departureDay, departureHour, departureMinute);
 		firstLatestReturnDate.set(returnYear, returnMonth, returnDay, returnHour, returnMinute);
@@ -124,7 +121,7 @@ public class Search {
 
 	public void init() {
 
-		HashMap<String, String> mapping = FileStream.readPersonalDetailsFromFile();
+		HashMap<String, String> mapping = FileReadService.readPersonalDetailsFromFile();
 		loginNameGol = mapping.get(Login.loginGol.getValue());
 		pswdNameGol = mapping.get(Login.passwordGol.getValue());
 
@@ -160,7 +157,7 @@ public class Search {
 		latestReturnDate.set(Calendar.MINUTE, returnMinute);
 	}
 
-	public void SearchCheapestFlight(PaymentType type) {
+	public void SearchCheapestFlight(FareType type) {
 		switch (type) {
 		case miles:
 			this.SearchThrough(true, 1);
@@ -239,7 +236,7 @@ public class Search {
 	private void writeOutSearchResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to) {
 		if (matches != null && matches.size() > 0) {
 			try {
-				FileStream.outputResults(matches, from, to);
+				FileReadService.outputResults(matches, from, to);
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -835,7 +832,7 @@ public class Search {
 
 	public static void main(String[] args) {
 		Search execute = new Search();
-		execute.SearchCheapestFlight(PaymentType.miles);
+		execute.SearchCheapestFlight(FareType.miles);
 	}
 
 

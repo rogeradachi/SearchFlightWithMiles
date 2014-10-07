@@ -1,12 +1,12 @@
 package navigation;
 
-import enums.PaymentType;
+import enums.FareType;
 
 public class FaresManager {
 	private int faresLimit;
-	private PaymentType paymentType;
+	private FareType paymentType;
 	
-	public FaresManager(PaymentType paymentType){
+	public FaresManager(FareType paymentType){
 		this.paymentType = paymentType;
 	}
 	
@@ -14,7 +14,7 @@ public class FaresManager {
 	 * Constructor. If the payment is not set, set MILES to default.
 	 */
 	public FaresManager(){
-		this.paymentType = PaymentType.miles;
+		this.paymentType = FareType.miles;
 	}
 	
 	/**
@@ -50,11 +50,11 @@ public class FaresManager {
 		this.faresLimit = faresLimit;
 	}
 
-	public PaymentType getPaymentType() {
+	public FareType getPaymentType() {
 		return paymentType;
 	}
 
-	public void setPaymentType(PaymentType paymentType) {
+	public void setPaymentType(FareType paymentType) {
 		this.paymentType = paymentType;
 	}	
 }

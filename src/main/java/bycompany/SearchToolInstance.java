@@ -19,7 +19,7 @@ import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import util.FileStream;
+import util.FileReadService;
 import enums.NationalAirports;
 
 public abstract class SearchToolInstance {
@@ -56,7 +56,7 @@ public abstract class SearchToolInstance {
 
 	private void writeOutFileResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to) {
 		try {
-			FileStream.outputResults(matches, from, to);
+			FileReadService.outputResults(matches, from, to);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

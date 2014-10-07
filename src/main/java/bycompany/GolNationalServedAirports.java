@@ -1,10 +1,10 @@
 package bycompany;
 
 import enums.Company;
-import util.FileStream;
+import util.FileReadService;
 
 public class GolNationalServedAirports extends ServedAirports {
 	public GolNationalServedAirports(){
-		this.setAirports(FileStream.readAirports(Company.GOL));
+		this.setAirports(FileReadService.readAirports(Company.GOL));
 	}
 }

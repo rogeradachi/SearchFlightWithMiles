@@ -1,6 +1,6 @@
 package enums;
 
-public enum PaymentType {
+public enum FareType {
 	miles(1), cash(2);
 	
 	private int value;
@@ -9,7 +9,7 @@ public enum PaymentType {
 		return value;
 	}
 
-	private PaymentType(int value) {
+	private FareType(int value) {
 		this.value = value;
 	}
 }
