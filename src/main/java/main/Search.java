@@ -25,9 +25,9 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import bycompany.AttendedAirports;
-import bycompany.GolNationalAttendedAirports;
-import bycompany.TamNationalAttendedAirports;
+import bycompany.ServedAirports;
+import bycompany.GolNationalServedAirports;
+import bycompany.TamNationalServedAirports;
 import util.FileStream;
 import util.Help;
 import util.ParserFlightGol;

@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 
-import types.Company;
+import enums.Company;
 import enums.NationalAirports;
 import model.FlightDetails;
 

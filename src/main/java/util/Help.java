@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import bycompany.GolNationalAttendedAirports;
-import bycompany.TamNationalAttendedAirports;
+import bycompany.GolNationalServedAirports;
+import bycompany.TamNationalServedAirports;
 import enums.NationalAirports;
 
 public class Help {

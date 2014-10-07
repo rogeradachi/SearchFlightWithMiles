@@ -17,7 +17,6 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	private final String gol = "https://clientes.smiles.com.br/eloyalty_ptb/start.swe?SWECmd=GotoView&SWEView=Login%20View";
 	@Override
 	public void includeSearchFilters() {
-		// TODO Auto-generated method stub
 		
 	}
 	@Override

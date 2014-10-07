@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import enums.NationalAirports;
 
-public class AttendedAirports {
+public class ServedAirports {
 	private ArrayList<String> airports;
 	
 	public boolean attendsAirport(NationalAirports ap) {

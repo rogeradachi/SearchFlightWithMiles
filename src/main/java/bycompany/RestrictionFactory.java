@@ -1,22 +1,22 @@
 package bycompany;
+import enums.Company;
 import enums.NationalAirports;
-import types.Company;
-import bycompany.AttendedAirports;
-import bycompany.GolNationalAttendedAirports;
-import bycompany.TamNationalAttendedAirports;
+import bycompany.ServedAirports;
+import bycompany.GolNationalServedAirports;
+import bycompany.TamNationalServedAirports;
 
 public class RestrictionFactory {
-	private AttendedAirports attended;
+	private ServedAirports served;
 
 	public RestrictionFactory(Company company) {
 		if (company.getValue() == Company.GOL.getValue()) {
-			this.attended = new GolNationalAttendedAirports();
+			this.served = new GolNationalServedAirports();
 		} else {
-			this.attended = new TamNationalAttendedAirports();
+			this.served = new TamNationalServedAirports();
 		}
 	}
 
 	public boolean attends(NationalAirports airport) {
-		return attended.attendsAirport(airport);
+		return served.attendsAirport(airport);
 	}
 }

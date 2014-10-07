@@ -9,9 +9,9 @@ public class DateManager {
 	private static final int _23 = 23;
 	private static final int _0 = 0;
 	@Inject
-	private Calendar earliestInbound;
+	private Calendar earliestDeparture;
 	@Inject
-	private Calendar latestOutbound;
+	private Calendar latestReturn;
 	@Inject
 	private Calendar startWindowDate;
 	@Inject
@@ -26,8 +26,8 @@ public class DateManager {
 	}
 
 	public void resetFlightDates() {
-		earliestInbound = (Calendar) startWindowDate.clone();
-		latestOutbound = (Calendar) initialReturnDate.clone();
+		earliestDeparture = (Calendar) startWindowDate.clone();
+		latestReturn = (Calendar) initialReturnDate.clone();
 	}
 
 	public void setJumpDays(int jumpDaysForward) {
@@ -38,43 +38,44 @@ public class DateManager {
 	 * Method to jump 'n' days forward to next search iteration
 	 */
 	public void forwardPeriod() {
-		earliestInbound.add(Calendar.DATE, this.jumpDays);
-		latestOutbound.add(Calendar.DATE, this.jumpDays);
+		earliestDeparture.add(Calendar.DATE, this.jumpDays);
+		latestReturn.add(Calendar.DATE, this.jumpDays);
 	}
 
-	public void setEarliestInbound(int day, int month, int year, int hour, int minute) {
-		this.earliestInbound.set(year, month, day, hour, minute);
+	public void setEarliestDeparture(int day, int month, int year, int hour, int minute) {
+		this.earliestDeparture.set(year, month, day, hour, minute);
 	}
 
-	public void setEarliestInbound(int day, int month, int year) {
-		this.setEarliestInbound(day, month, year, _0, _0);
+	public void setEarliestDeparture(int day, int month, int year) {
+		this.setEarliestDeparture(day, month, year, _0, _0);
 	}
 
-	public void setLatestOutbound(int day, int month, int year, int hour, int minute) {		
-		this.latestOutbound.set(year, month, day, hour, minute);
+	public void setLatestReturn(int day, int month, int year, int hour, int minute) {		
+		this.latestReturn.set(year, month, day, hour, minute);
 		
 		if (initialReturnDate == null) {//set only once, the first return date.
-			initialReturnDate = (Calendar) this.latestOutbound.clone();
+			initialReturnDate = (Calendar) this.latestReturn.clone();
 		}
 	}
 
-	public void setLatestOutbound(int day, int month, int year) {
-		this.setLatestOutbound(day, month, year, _23, _59);
+	public void setLatestReturn(int day, int month, int year) {
+		this.setLatestReturn(day, month, year, _23, _59);
 	}
 
 	public void setStartWindowDate(int day, int month, int year) {
+		startWindowDate.set(year, month, day, _0, _0);
 	}
 
 	public void setEndWindowDate(int day, int month, int year) {
-
+		endWindowDate.set(year, month, day, _23, _59);
 	}
 
-	public Calendar getEarliestInbound() {
-		return earliestInbound;
+	public Calendar getEarliestDeparture() {
+		return earliestDeparture;
 	}
 
-	public Calendar getLatestOutbound() {
-		return latestOutbound;
+	public Calendar getLatestReturn() {
+		return latestReturn;
 	}
 
 	public Calendar getStartWindowDate() {
@@ -101,12 +102,12 @@ public class DateManager {
 		this.returnDayofWeek = returnDayofWeek;
 	}
 
-	public void setEarliestInbound(Calendar earliestInbound) {
-		this.earliestInbound = earliestInbound;
+	public void setEarliestDeparture(Calendar earliestDeparture) {
+		this.earliestDeparture = earliestDeparture;
 	}
 
-	public void setLatestOutbound(Calendar latestOutbound) {
-		this.latestOutbound = latestOutbound;
+	public void setLatestReturn(Calendar latestReturn) {
+		this.latestReturn = latestReturn;
 	}
 
 	public void setStartWindowDate(Calendar startWindowDate) {

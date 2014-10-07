@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import javax.inject.Inject;
 
 import model.Trip;
-import types.Company;
 import bycompany.RestrictionFactory;
+import enums.Company;
 import enums.NationalAirports;
 
 public class TripManager {
@@ -26,7 +26,34 @@ public class TripManager {
 		indexFrom = 0;
 		indexTo = 0;
 	}
+	
+	/**
+	 * Reset the indexes from loop and set new flight company
+	 * @param flightCo
+	 */
+	public void reset(Company flightCo){
+		if( flightCo != null)
+			restriction = new RestrictionFactory(flightCo);
+		else
+			restriction = null;
+		indexFrom = 0;
+		indexTo = 0;
+	}
+	
+	/**
+	 * Reset the indexes from loop and set new flight company
+	 * @param flightCo
+	 */
+	public void reset(){
+		restriction = null;
+		indexFrom = 0;
+		indexTo = 0;
+	}
 
+	/**
+	 * Get the next pair origin->destination
+	 * @return encapsuled object with next trip
+	 */
 	public Trip next() {
 		do {
 			if (indexTo >= to.size()) {
@@ -44,6 +71,12 @@ public class TripManager {
 		return new Trip(from.get(indexFrom), to.get(indexTo));
 	}
 
+	/**
+	 * Verify if the 'from' and 'to' arguments are served by given company
+	 * @param from departing airport
+	 * @param to destination airport
+	 * @return TRUE if possible, FALSE otherwise
+	 */
 	private boolean possibleTrip(NationalAirports from, NationalAirports to) {
 		if (this.restriction == null) {
 			return true;

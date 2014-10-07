@@ -7,7 +7,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import model.FlightDetails;
+import navigation.DateManager;
+import navigation.FaresManager;
+import navigation.TripManager;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -22,16 +27,9 @@ public abstract class SearchToolInstance {
 	private final String DD_MM_YYYY = "dd/MM/yyyy";
 	
 	public String url;
-	private String userName;
-	private String passwd;	
-	private int maximumMilesLimit;
-	private int maximumAmountLimit;
-
-	private ArrayList<FlightDetails> matches;
+	public @Inject ArrayList<FlightDetails> matches;
 	
 	private WebDriver driver;
-	
-	private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy hh:mm");	
 	
 	public abstract void includeSearchFilters();
 	public abstract void loginUserSpace();
@@ -46,14 +44,14 @@ public abstract class SearchToolInstance {
 		dtInput.sendKeys(del + format.format(date.getTime()));
 	}
 
-	private void chooseFromItemList(List<WebElement> listItem, NationalAirports destination) {
-		StringBuilder builder = new StringBuilder();
-		builder.append("(").append(destination.toString()).append(")");
-		for (WebElement webElement : listItem) {
-			if (webElement.getText().contains(builder.toString())) {
-				webElement.click();
-			}
-		}
+	private void chooseAirport(String xpath, NationalAirports destination) {
+		WebElement airport = driver.findElement(By.xpath(xpath));
+		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
+		airport.sendKeys(del + destination.code());
+	}
+	
+	private void actionClickElement(String xpath){
+		driver.findElement(By.xpath(xpath)).click();
 	}
 
 	private void writeOutFileResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to) {

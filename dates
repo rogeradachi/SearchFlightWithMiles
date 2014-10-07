@@ -1,0 +1,5 @@
+departure=01/11/2014 18:00
+return=03/11/2014 21:00
+startWindow=01/11/2014
+endWindow=31/12/2014
+jumpDays=7
