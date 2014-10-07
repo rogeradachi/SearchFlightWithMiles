@@ -7,7 +7,12 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import model.FlightDetails;
+import navigation.DateManager;
+import navigation.FaresManager;
+import navigation.TripManager;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -22,37 +27,9 @@ public abstract class SearchToolInstance {
 	private final String DD_MM_YYYY = "dd/MM/yyyy";
 	
 	public String url;
-	private String userName;
-	private String passwd;	
-
-	private Calendar earliestDepartureHour;
-	private Calendar latestReturnDate;
-	private Calendar lastAvailableTravellingDate;
-	private int departureYear;
-	private int departureMonth;
-	private int departureDay;
-	private int departureHour;
-	private int departureMinute;
-
-	private int returnYear;
-	private int returnMonth;
-	private int returnDay;
-	private int returnHour;
-	private int returnMinute;
-
-	private String departureDayofWeek;
-	private String returnDayofWeek;
-	private int maximumMilesLimit;
-	private int maximumAmountLimit;
-
-	private ArrayList<FlightDetails> matches;
+	public @Inject ArrayList<FlightDetails> matches;
 	
 	private WebDriver driver;
-
-	private NationalAirports from;
-	private ArrayList<NationalAirports> to;
-	
-	private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy hh:mm");	
 	
 	public abstract void includeSearchFilters();
 	public abstract void loginUserSpace();
@@ -60,41 +37,21 @@ public abstract class SearchToolInstance {
 	public abstract void loopSearchFlights();
 	public abstract void extractFlightDetails(List<WebElement> details, Calendar flightTime, NationalAirports to);
 	
-	private void forwardPeriod() {
-		earliestDepartureHour.add(Calendar.DATE, one_week);
-		earliestDepartureHour.set(Calendar.HOUR_OF_DAY, departureHour);
-		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
-
-		latestReturnDate.add(Calendar.DATE, one_week);
-		latestReturnDate.set(Calendar.HOUR_OF_DAY, returnHour);
-		latestReturnDate.set(Calendar.MINUTE, returnMinute);
-	}
-
-	private void forwardPeriod(int forwardDays) {
-		earliestDepartureHour.add(Calendar.DATE, forwardDays);
-		earliestDepartureHour.set(Calendar.HOUR_OF_DAY, departureHour);
-		earliestDepartureHour.set(Calendar.MINUTE, departureMinute);
-
-		latestReturnDate.add(Calendar.DATE, forwardDays);
-		latestReturnDate.add(Calendar.HOUR_OF_DAY, returnHour);
-		latestReturnDate.add(Calendar.MINUTE, returnMinute);
-	}
-	
-	private void chooseReturnDate(String xpath) {
-		WebElement returndt = driver.findElement(By.xpath(xpath));
+	private void chooseDate(String xpath, Calendar date) {
+		WebElement dtInput = driver.findElement(By.xpath(xpath));
 		SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
-		returndt.sendKeys(del + format.format(latestReturnDate.getTime()));
+		dtInput.sendKeys(del + format.format(date.getTime()));
 	}
 
-	private void chooseFromItemList(List<WebElement> listItem, NationalAirports destination) {
-		StringBuilder builder = new StringBuilder();
-		builder.append("(").append(destination.toString()).append(")");
-		for (WebElement webElement : listItem) {
-			if (webElement.getText().contains(builder.toString())) {
-				webElement.click();
-			}
-		}
+	private void chooseAirport(String xpath, NationalAirports destination) {
+		WebElement airport = driver.findElement(By.xpath(xpath));
+		String del = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
+		airport.sendKeys(del + destination.code());
+	}
+	
+	private void actionClickElement(String xpath){
+		driver.findElement(By.xpath(xpath)).click();
 	}
 
 	private void writeOutFileResults(ArrayList<FlightDetails> matches, NationalAirports from, NationalAirports to) {

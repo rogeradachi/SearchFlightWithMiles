@@ -1,7 +1,7 @@
-package types;
+package enums;
 
 public enum Company {
-	TAM("tam"), GOL("gol");
+	TAM("Tam"), GOL("Gol");
 	
 	private String value;
 	

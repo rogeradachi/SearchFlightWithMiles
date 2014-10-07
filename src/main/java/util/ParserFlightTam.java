@@ -3,7 +3,7 @@ package util;
 import java.util.Calendar;
 
 import model.FlightDetails;
-import types.Company;
+import enums.Company;
 import enums.NationalAirports;
 
 public class ParserFlightTam {
