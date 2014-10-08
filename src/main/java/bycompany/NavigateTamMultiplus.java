@@ -10,18 +10,6 @@ import enums.NationalAirports;
 public class NavigateTamMultiplus extends SearchToolInstance{
 
 	@Override
-	public void includeSearchFilters() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void loginUserSpace() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public void searchFlights() {
 		// TODO Auto-generated method stub
 		

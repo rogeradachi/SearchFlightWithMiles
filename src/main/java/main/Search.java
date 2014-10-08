@@ -121,9 +121,8 @@ public class Search {
 
 	public void init() {
 
-		HashMap<String, String> mapping = FileReadService.readPersonalDetailsFromFile();
-		loginNameGol = mapping.get(Login.loginGol.getValue());
-		pswdNameGol = mapping.get(Login.passwordGol.getValue());
+		//loginNameGol = mapping.get(Login.loginGol.getValue());
+		//pswdNameGol = mapping.get(Login.passwordGol.getValue());
 
 		from = new ArrayList<NationalAirports>();
 		to = new ArrayList<NationalAirports>();
@@ -777,20 +776,6 @@ public class Search {
 		return driver;
 	}
 
-	private void waitFrameNavigable(int frame) {
-		WebDriverWait wait = new WebDriverWait(driver, 60);
-		boolean waitOver = false;
-		while (waitOver) {
-			try {
-				// wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(By.0));
-				waitOver = true;
-			} catch (Exception ex) {
-
-			}
-		}
-
-	}
-
 	private WebDriver navigateThroughInternalFramesSearch() {
 		driver = driver.switchTo().frame(0);
 
@@ -812,10 +797,6 @@ public class Search {
 		input.sendKeys(loginName);
 	}
 
-	private void print() {
-		System.out.println(driver.getPageSource());
-	}
-
 	private void addMatches(FlightMatches searchMatches) {
 		if (searchMatches != null) {
 			searchMatches.sortMatches();
@@ -833,17 +814,5 @@ public class Search {
 	public static void main(String[] args) {
 		Search execute = new Search();
 		execute.SearchCheapestFlight(FareType.miles);
-	}
-
-
-
-	public DateManager getMana() {
-		return mana;
-	}
-
-
-
-	public void setMana(DateManager mana) {
-		this.mana = mana;
 	}
 }

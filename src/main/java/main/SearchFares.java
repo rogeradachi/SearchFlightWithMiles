@@ -1,8 +1,11 @@
 package main;
 
+import java.util.HashMap;
+
 import javax.inject.Inject;
 
 import model.Login;
+import model.SearchFilter;
 import navigation.DateManager;
 import navigation.FaresManager;
 import navigation.TripManager;
@@ -17,20 +20,26 @@ public class SearchFares {
 	protected @Inject DateManager dt_m;
 	protected @Inject FaresManager fare_m;
 	protected @Inject TripManager trip_m;
+	protected @Inject SearchFilter flt;
 	protected @Inject Login smilesLogin;
 	protected boolean oneWay;
+	protected HashMap<String, String> urls;
 	
 	public SearchFares(){
 		dt_m = FileReadService.readDates();
 		smilesLogin = FileReadService.readPersonalDetailsFromFile();
-		FileReadService.readSearchType();
+		flt = FileReadService.readSearchType();
+		urls = FileReadService.readUrls();
 	}
 	
-	private void setOneWay(boolean oneWay){
-		this.oneWay = oneWay;
+	/**
+	 * Simply reset the flying dates and prepare for another iteraction
+	 */
+	private void resetCalendar(){
+		dt_m.resetFlightDates();
 	}
 	
-	private void setEarliestDeparture(int day, int month, int year, int hour, int minute){
-		dt_m.setEarliestOutbound(day, month, year, hour, minute);
+	public static void main(String[] args) {
+		SearchFares src = new SearchFares();
 	}
 }

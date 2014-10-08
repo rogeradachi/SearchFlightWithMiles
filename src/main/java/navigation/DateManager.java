@@ -19,6 +19,7 @@ public class DateManager {
 	private Calendar initialReturnDate;
 	private String travelDayofWeek;
 	private String returnDayofWeek;
+	@Inject
 	private int jumpDays;
 	
 	public DateManager(){
@@ -63,10 +64,14 @@ public class DateManager {
 	}
 
 	public void setStartWindowDate(int day, int month, int year) {
+		if(startWindowDate == null)
+			startWindowDate = Calendar.getInstance();
 		startWindowDate.set(year, month, day, _0, _0);
 	}
 
 	public void setEndWindowDate(int day, int month, int year) {
+		if(endWindowDate == null)
+			endWindowDate = Calendar.getInstance();
 		endWindowDate.set(year, month, day, _23, _59);
 	}
 
@@ -108,6 +113,9 @@ public class DateManager {
 
 	public void setLatestReturn(Calendar latestReturn) {
 		this.latestReturn = latestReturn;
+		if (initialReturnDate == null) {//set only once, the first return date.
+			initialReturnDate = (Calendar) this.latestReturn.clone();
+		}
 	}
 
 	public void setStartWindowDate(Calendar startWindowDate) {

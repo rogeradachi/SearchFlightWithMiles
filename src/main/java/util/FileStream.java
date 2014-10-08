@@ -16,20 +16,17 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import model.FlightDetails;
-import model.Login;
-import model.SearchFilter;
 import navigation.DateManager;
 import enums.Company;
-import enums.FareType;
 import enums.FileName;
 import enums.NationalAirports;
 
-public class FileReadService {
+public class FileStream {
 	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to) throws FileNotFoundException,
 			UnsupportedEncodingException {
 		PrintWriter writer;
 		try {
-			String filename = String.format("src/main/results/" + FileName.resultFile.getValue(), from.code(), to.code());
+			String filename = String.format(FileName.resultFile.getValue(), from.code(), to.code());
 			writer = new PrintWriter(new BufferedWriter(new FileWriter(filename, false)));
 
 			writeHeader(writer);
@@ -50,23 +47,19 @@ public class FileReadService {
 		writer.println();
 	}
 
-	public static Login readPersonalDetailsFromFile() {
+	public static HashMap<String, String> readPersonalDetailsFromFile() {
 		HashMap<String, String> mapping = new HashMap<String, String>();
-		Login userLogin = new Login();
-		
+
 		BufferedReader br = null;
 		try {
 			String sCurrentLine;
 
-			br = new BufferedReader(new FileReader("src/main/resources/" + FileName.loginFile.getValue()));
+			br = new BufferedReader(new FileReader("./" + FileName.loginFile.getValue()));
 
 			while ((sCurrentLine = br.readLine()) != null) {
 				String[] dados = sCurrentLine.split("=");
 				mapping.put(dados[0], dados[1]);
 			}
-			
-			userLogin.setLogin(mapping.get("loginNameGol"));
-			userLogin.setPassword(mapping.get("pswdNameGol"));
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -79,7 +72,7 @@ public class FileReadService {
 			}
 		}
 
-		return userLogin;
+		return mapping;
 	}
 
 	public static ArrayList<String> readAirports(Company company) {
@@ -89,7 +82,7 @@ public class FileReadService {
 		try {
 			String sCurrentLine;
 
-			br = new BufferedReader(new FileReader("src/main/resources/" + getFileName(company)));
+			br = new BufferedReader(new FileReader("./" + getFileName(company)));
 
 			while ((sCurrentLine = br.readLine()) != null) {
 				airports.add(sCurrentLine);
@@ -116,7 +109,7 @@ public class FileReadService {
 		Calendar departure = Calendar.getInstance();
 		Calendar return_ = Calendar.getInstance();
 		Calendar startWindow = Calendar.getInstance();
-		Calendar endWindow = Calendar.getInstance();
+		Calendar closeWindow = Calendar.getInstance();
 		
 		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", new Locale("pt-BR"));
 		SimpleDateFormat dt = new SimpleDateFormat("dd/MM/yyyy", new Locale("pt-BR"));
@@ -124,7 +117,7 @@ public class FileReadService {
 		try {
 			String sCurrentLine;
 
-			br = new BufferedReader(new FileReader("src/main/resources/" + FileName.datesFile.getValue()));
+			br = new BufferedReader(new FileReader("./" + FileName.datesFile));
 			while ((sCurrentLine = br.readLine()) != null) {
 				String[] dados = sCurrentLine.split("=");
 				mapping.put(dados[0], dados[1]);
@@ -133,13 +126,13 @@ public class FileReadService {
 			departure.setTime(sdf.parse(mapping.get("departure")));
 			return_.setTime(sdf.parse(mapping.get("return")));
 			startWindow.setTime(dt.parse(mapping.get("startWindow")));
-			endWindow.setTime(dt.parse(mapping.get("endWindow")));
+			closeWindow.setTime(dt.parse(mapping.get("endWindow")));
 			int jumpDays = Integer.parseInt(mapping.get("jumpDays"));
 			
 			dt_m.setEarliestDeparture(departure);
 			dt_m.setLatestReturn(return_);
 			dt_m.setStartWindowDate(startWindow);
-			dt_m.setEndWindowDate(endWindow.get(Calendar.DAY_OF_MONTH),endWindow.get(Calendar.MONTH),endWindow.get(Calendar.YEAR));
+			dt_m.setEndWindowDate(closeWindow);
 			dt_m.setJumpDays(jumpDays);
 
 		} catch (IOException e) {
@@ -157,66 +150,6 @@ public class FileReadService {
 		}
 
 		return dt_m;
-	}
-	
-	public static SearchFilter readSearchType() {
-		HashMap<String, String> mapping = new HashMap<String, String>();
-		SearchFilter filter = new SearchFilter();
-		BufferedReader br = null;
-
-		try {
-			String sCurrentLine;
-
-			br = new BufferedReader(new FileReader("src/main/resources/" + FileName.searchTypeFile.getValue()));
-			while ((sCurrentLine = br.readLine()) != null) {
-				String[] dados = sCurrentLine.split("=");
-				mapping.put(dados[0], dados[1]);
-			}
-			
-			int fareType = Integer.parseInt(mapping.get("fareType"));
-			filter.setFareType(fareType == 1?FareType.miles :FareType.cash);
-			
-			int oneWay = Integer.parseInt(mapping.get("oneWay"));
-			filter.setOneWay( oneWay == 1? true:false );
-			
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (br != null)
-					br.close();
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
-		}
-
-		return filter;
-	}
-	
-	public static HashMap<String, String> readUrls() {
-		HashMap<String, String> mapping = new HashMap<String, String>();
-		BufferedReader br = null;
-
-		try {
-			String sCurrentLine;
-
-			br = new BufferedReader(new FileReader("src/main/resources/" + FileName.urlFile.getValue()));
-			while ((sCurrentLine = br.readLine()) != null) {
-				String[] dados = sCurrentLine.split("=");
-				mapping.put(dados[0], dados[1]);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if (br != null)
-					br.close();
-			} catch (IOException ex) {
-				ex.printStackTrace();
-			}
-		}
-
-		return mapping;
 	}
 
 	private static String getFileName(Company company) {
