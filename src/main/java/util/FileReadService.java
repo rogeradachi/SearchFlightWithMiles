@@ -25,6 +25,7 @@ import enums.FileName;
 import enums.NationalAirports;
 
 public class FileReadService {
+	
 	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to) throws FileNotFoundException, UnsupportedEncodingException {
 		PrintWriter writer;
 		try {
@@ -165,7 +166,7 @@ public class FileReadService {
 		try {
 			String sCurrentLine;
 
-			br = new BufferedReader(new FileReader("src/main/resources/" + FileName.searchTypeFile.getValue()));
+			br = new BufferedReader(new FileReader("src/main/resources/" + FileName.searchFilterFile.getValue()));
 			while ((sCurrentLine = br.readLine()) != null) {
 				String[] dados = sCurrentLine.split("=");
 				mapping.put(dados[0], dados[1]);
@@ -176,7 +177,9 @@ public class FileReadService {
 
 			int oneWay = Integer.parseInt(mapping.get("oneWay"));
 			filter.setOneWay(oneWay == 1 ? true : false);
-
+			
+			filter.setCashLimit(Integer.parseInt(mapping.get("milesLimit")));
+			filter.setMilesLimit(Integer.parseInt(mapping.get("cashLimit")));
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {

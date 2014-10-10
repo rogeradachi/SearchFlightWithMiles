@@ -108,16 +108,16 @@ public class TripManager {
 		this.to.addAll(to);
 	}
 
-	public ArrayList<NationalAirports> getFrom() {
-		return from;
+	public NationalAirports From() {
+		return from.get(indexFrom);
 	}
 
 	public void setFrom(ArrayList<NationalAirports> from) {
 		this.from = from;
 	}
 
-	public ArrayList<NationalAirports> getTo() {
-		return to;
+	public NationalAirports To() {
+		return to.get(indexTo);
 	}
 
 	public void setTo(ArrayList<NationalAirports> to) {

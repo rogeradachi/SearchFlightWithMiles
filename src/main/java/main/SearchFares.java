@@ -46,7 +46,7 @@ public class SearchFares {
 	private void doSearchSmiles(){
 		this.smiles = new NavigateGolSmiles(urls);
 		this.smiles.loginUserSpace();
-		this.smiles.searchFlights(trip_m, dt_m, fare_m);
+		this.smiles.searchFlights(trip_m, dt_m, fare_m, flt);
 	}
 	
 	private void doSearchMultiplus(){
