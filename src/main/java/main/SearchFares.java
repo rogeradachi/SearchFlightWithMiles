@@ -1,9 +1,11 @@
 package main;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.inject.Inject;
 
+import enums.NationalAirports;
 import model.Login;
 import model.SearchFilter;
 import navigation.DateManager;
@@ -21,15 +23,14 @@ public class SearchFares {
 	protected @Inject FaresManager fare_m;
 	protected @Inject TripManager trip_m;
 	protected @Inject SearchFilter flt;
-	protected @Inject Login smilesLogin;
 	protected boolean oneWay;
 	protected HashMap<String, String> urls;
 	
 	public SearchFares(){
 		dt_m = FileReadService.readDates();
-		smilesLogin = FileReadService.readPersonalDetailsFromFile();
 		flt = FileReadService.readSearchType();
 		urls = FileReadService.readUrls();
+		
 	}
 	
 	/**
@@ -39,7 +40,21 @@ public class SearchFares {
 		dt_m.resetFlightDates();
 	}
 	
+	public void doSearch(){
+	}
+	
+	private void doSearchSmiles(){
+		this.smiles = new NavigateGolSmiles(urls);
+		this.smiles.loginUserSpace();
+		this.smiles.searchFlights(trip_m, dt_m, fare_m);
+	}
+	
+	private void doSearchMultiplus(){
+		this.multiplus = new NavigateTamMultiplus(urls);
+	}
+	
 	public static void main(String[] args) {
 		SearchFares src = new SearchFares();
+		src.doSearchSmiles();
 	}
 }

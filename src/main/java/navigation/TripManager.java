@@ -1,10 +1,12 @@
 package navigation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.inject.Inject;
 
 import model.Trip;
+import util.FileReadService;
 import bycompany.RestrictionFactory;
 import enums.Company;
 import enums.NationalAirports;
@@ -15,11 +17,15 @@ public class TripManager {
 	private @Inject ArrayList<NationalAirports> to;
 	private int indexFrom;
 	private int indexTo;
+	private HashMap<String, ArrayList<NationalAirports>> fromTo;
 
 	public TripManager(Company flightCo) {
 		restriction = new RestrictionFactory(flightCo);
 		indexFrom = 0;
 		indexTo = 0;
+		fromTo = FileReadService.fromTo();
+		from = fromTo.get("from");
+		to = fromTo.get("to");
 	}
 
 	public TripManager() {

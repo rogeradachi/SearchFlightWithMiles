@@ -38,9 +38,17 @@ public class DateManager {
 	/*
 	 * Method to jump 'n' days forward to next search iteration
 	 */
-	public void forwardPeriod() {
+	public boolean forwardPeriod() {
 		earliestDeparture.add(Calendar.DATE, this.jumpDays);
 		latestReturn.add(Calendar.DATE, this.jumpDays);
+		
+		if(!latestReturn.before(endWindowDate)){
+			this.resetFlightDates();
+			return false; //stop forwarding
+		}
+		else{
+			return true;
+		}
 	}
 
 	public void setEarliestDeparture(int day, int month, int year, int hour, int minute) {
