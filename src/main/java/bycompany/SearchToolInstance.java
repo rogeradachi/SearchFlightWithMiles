@@ -8,6 +8,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import model.FlightDetails;
+import model.FlightMatches;
 import model.SearchFilter;
 import navigation.DateManager;
 import navigation.FaresManager;
@@ -64,6 +65,14 @@ public abstract class SearchToolInstance {
 			WaitCondition.waitElementVisible(xpath, driver);
 			WaitCondition.waitElementClicable(xpath, driver);
 			this.actionClickElement(xpath);
+		}
+	}
+	
+	protected FlightMatches initFlightMatches(DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+		if (flt.getOneWay()) {
+			return new FlightMatches(fare_m, dt_m.getEarliestDeparture());
+		} else {
+			return new FlightMatches(fare_m, dt_m.getEarliestDeparture(), dt_m.getLatestReturn());
 		}
 	}
 

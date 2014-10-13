@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 
+import navigation.FaresManager;
 import enums.NationalAirports;
 
 public class FlightMatches {
-	private int amountLimit;
-	private int milesLimit;
+	private FaresManager fr_m;
 
 	public NationalAirports from;
 	public NationalAirports to;
@@ -23,56 +23,39 @@ public class FlightMatches {
 	private boolean oneWay;
 
 	public FlightMatches(NationalAirports from, NationalAirports to) {
-		this.amountLimit = 300;
-		this.milesLimit = 16000;
 		this.from = from;
 		this.to = to;
 	}
 
-	public FlightMatches(int amountLimit, int milesLimit, Calendar earliestDepartureTime, Calendar latestReturnTime) {
-		this.amountLimit = amountLimit;
-		this.milesLimit = milesLimit;
+	public FlightMatches(FaresManager fr_m, Calendar earliestDepartureTime, Calendar latestReturnTime) {
 		this.earliestDepartureTime = earliestDepartureTime;
 		this.latestReturnTime = latestReturnTime;
 		this.oneWay = false;
 	}
 
-	public FlightMatches(int amountLimit, int milesLimit, Calendar earliestDepartureTime) {
-		this.amountLimit = amountLimit;
-		this.milesLimit = milesLimit;
+	public FlightMatches(FaresManager fr_m, Calendar earliestDepartureTime) {
 		this.earliestDepartureTime = earliestDepartureTime;
 		this.oneWay = true;
 	}
 
-	public ArrayList<FlightDetails> bestCashFares() {
+	public ArrayList<FlightDetails> bestFares() {
 		ArrayList<FlightDetails> bestFares = new ArrayList<FlightDetails>();
 		this.excludesFlightsNotInTheInterval();
 
 		if (oneWay) {
-			return outBoundFLights;
-		} else {
+			ArrayList<FlightDetails> exclude = new ArrayList<FlightDetails>();
 			for (FlightDetails departure : outBoundFLights) {
-				for (FlightDetails returning : inBoundFlights) {
-					if (departure.getAmount() + returning.getAmount() <= amountLimit) {
-						bestFares.add(mergeFlightDetails(departure, returning));
-					}
+				if (!fr_m.belowLimit(departure.getAmount())) {
+					exclude.add(departure);
 				}
 			}
-		}
-
-		return bestFares;
-	}
-
-	public ArrayList<FlightDetails> bestMilesFares() {
-		ArrayList<FlightDetails> bestFares = new ArrayList<FlightDetails>();
-		this.excludesFlightsNotInTheInterval();
-
-		if (oneWay) {
+			outBoundFLights.removeAll(exclude);
+			
 			return outBoundFLights;
 		} else {
 			for (FlightDetails departure : outBoundFLights) {
 				for (FlightDetails returning : inBoundFlights) {
-					if (departure.getAmount() + returning.getAmount() <= milesLimit) {
+					if (fr_m.belowLimit(departure.getAmount(), returning.getAmount())) {
 						bestFares.add(mergeFlightDetails(departure, returning));
 					}
 				}
@@ -103,8 +86,7 @@ public class FlightMatches {
 	public FlightDetails mergeFlightDetails(FlightDetails departureFlight, FlightDetails returnFlight) {
 		FlightDetails merged = new FlightDetails();
 
-		merged.setAmount(departureFlight.getAmount() + returnFlight.getAmount())
-				.setFlightCode(departureFlight.getFlightCode() + "/" + returnFlight.getFlightCode()).setArriveTime(returnFlight.getArriveTime())
+		merged.setAmount(departureFlight.getAmount() + returnFlight.getAmount()).setFlightCode(departureFlight.getFlightCode() + "/" + returnFlight.getFlightCode()).setArriveTime(returnFlight.getArriveTime())
 				.setFlightTime(departureFlight.getFlightTime()).setStopOvers(0).setFlightDuration("");
 		// TODO: Get stopOvers and flying time
 
@@ -122,7 +104,7 @@ public class FlightMatches {
 	private void excludesDepartureFlightsNotInTheInterval() {
 		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();
 		for (FlightDetails flightDetails : outBoundFLights) {
-			if (flightDetails!=null && flightDetails.getFlightTime().before(earliestDepartureTime)) {
+			if (flightDetails != null && flightDetails.getFlightTime().before(earliestDepartureTime)) {
 				exclusions.add(flightDetails);
 			}
 		}
@@ -168,14 +150,6 @@ public class FlightMatches {
 		this.inBoundFlights = returnFlights;
 	}
 
-	public void setAmountLimit(int amountLimit) {
-		this.amountLimit = amountLimit;
-	}
-
-	public void setMilesLimit(int milesLimit) {
-		this.milesLimit = milesLimit;
-	}
-
 	public void setEarliestDepartureTime(Calendar earliestDepartureTime) {
 		this.earliestDepartureTime = earliestDepartureTime;
 	}
@@ -196,4 +170,11 @@ public class FlightMatches {
 		return this.from.code() + "-" + this.to.code();
 	}
 
+	public FaresManager getFr_m() {
+		return fr_m;
+	}
+
+	public void setFr_m(FaresManager fr_m) {
+		this.fr_m = fr_m;
+	}
 }

@@ -86,27 +86,27 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 	}
 	
-	public ArrayList<FlightDetails> extractFlightDetails(NationalAirports dep, NationalAirports des, boolean oneWay) {
+	public ArrayList<FlightDetails> extractFlightDetails(TripManager trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitElementVisible(golResultsDeparture, driver);
 
-		FlightMatches searchMatches = initFlightMatches(oneWay);
+		FlightMatches searchMatches = initFlightMatches(dt_m, fare_m, flt);
 
 		// departure flights
 		List<WebElement> departures = driver.findElements(By.xpath(golResultsDeparture));
 		if (departures != null && departures.size() > 0) {
 			departures.remove(0);// remove header
 		}
-		searchMatches.setOutBoundFlights(extractListDetails(departures, golResultsReturn, dep, des));
+		searchMatches.setOutBoundFlights(extractListDetails(departures, golResultsReturn));
 
-		if (!oneWay) {
+		if (!flt.getOneWay()) {
 			// return flights
-			List<WebElement> arrives = driver.findElements(By.xpath("id('site')/div[7]/div[3]/div"));
+			List<WebElement> arrives = driver.findElements(By.xpath(golResultsReturn));
 			arrives.remove(0);// remove header
 
-			searchMatches.setInBoundFlights(extractListDetails(arrives, latestReturnDate, dep, des));
+			searchMatches.setInBoundFlights(extractListDetails(arrives, dt_m.getLatestReturn());
 		}
 
-		return searchMatches.bestMilesFares();
+		return searchMatches.getBestFares();
 	}
 
 	@Override
@@ -139,6 +139,35 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		}
 		//return listaFlights;
 
+	}
+	
+	private ArrayList<FlightDetails> extractListDetails(List<WebElement> details, Calendar flightTime) {
+		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
+
+		for (WebElement webElement : details) {
+			WebElement flightDetails = webElement.findElement(By.cssSelector(".contentFlight"));
+			WebElement flightPrice = webElement.findElement(By.cssSelector(".contentTarifas"));
+
+			String code = flightDetails.findElement(By.cssSelector(".voo-titulo")).getText();
+			String leave = flightDetails.findElement(By.cssSelector(".saida-voo")).getText();
+			String arrive = flightDetails.findElement(By.cssSelector(".chegada-voo")).getText();
+			String duration = flightDetails.findElement(By.cssSelector(".duracao-voo")).getText();
+
+			// TODO: verificar o conflitos de datas fixas do voo de partida e
+			// chegada (podem ocorrer em dias diferentes e consequentemnte em
+			// anos diferentes)
+			Calendar departureDate = ParserFlightGol.returnGolPatternCalendar(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
+					flightTime.get(Calendar.YEAR));
+			Calendar returnDate = ParserFlightGol.returnGolPatternCalendar(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
+					flightTime.get(Calendar.YEAR));
+
+			FlightDetails flight = ParserFlightGol.parseTo(code, departureDate, returnDate, duration, flightPrice.getText(), dep, des);
+			if (flight != null) {
+				listaFlights.add(flight);
+			}
+		}
+
+		return listaFlights;
 	}
 
 	private void inputLogin(String loginName, String id) {
