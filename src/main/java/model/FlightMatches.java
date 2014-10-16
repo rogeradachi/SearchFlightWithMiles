@@ -48,6 +48,9 @@ public class FlightMatches {
 				if (!fr_m.belowLimit(departure.getAmount())) {
 					exclude.add(departure);
 				}
+				if( earliestDepartureTime.before(departure.getFlightTime())){
+					exclude.add(departure);
+				}
 			}
 			outBoundFLights.removeAll(exclude);
 			

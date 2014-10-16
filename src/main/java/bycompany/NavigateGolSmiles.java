@@ -54,7 +54,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	}
 
 	@Override
-	public void searchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public FlightMatches searchFlightsFirstLoop(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitElementClicable(Ids.golOneWayxPath, driver);
 		this.radioOneWayTrip(flt.getOneWay(), Ids.golOneWayxPath);
 
@@ -63,22 +63,28 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 		this.actionClickElement(Ids.golSubmitFirstSearch);
 
-		this.extractFlightDetails(trip, dt_m, fare_m, flt);
+		return this.extractFlightDetails(dt_m, fare_m, flt);
 	}
 
-	public void loopDates(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public ArrayList<FlightMatches> loopDates(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitPageLoaded(driver);
+		
+		ArrayList<FlightMatches> matches = new ArrayList<FlightMatches>();
 
 		while (dt_m.forwardPeriod()) {
 			this.chooseDate(Ids.golInputTripDay, Ids.golInputReturnDay, dt_m, flt.getOneWay());
 
 			this.actionClickElement(Ids.golSubmitLoopSearch);
-			this.extractFlightDetails(trip, dt_m, fare_m, flt);
+			matches.add(this.extractFlightDetails(dt_m, fare_m, flt));
 		}
+		
+		dt_m.resetFlightDates();
+		
+		return matches;
 	}
 
 	@Override
-	public void loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public FlightMatches loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitElementClicable("id('fs_container_origins[0]')/a", driver);
 
 		/* Departure Airport */
@@ -99,10 +105,12 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		//}
 
 		driver.findElement(By.xpath(Ids.golSubmitLoopSearch)).click();
+		
+		return extractFlightDetails(dt_m,fare_m, flt);
 	}
 
 	@Override
-	public ArrayList<FlightDetails> extractFlightDetails(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public FlightMatches extractFlightDetails(DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitElementVisible(Ids.golResultsDeparture, driver);
 
 		FlightMatches searchMatches = initFlightMatches(dt_m, fare_m, flt);
@@ -122,7 +130,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 			searchMatches.setInBoundFlights(extractListDetails(arrives, dt_m.getLatestReturn()));
 		}
 
-		return searchMatches.getBestFares();
+		return searchMatches;
 	}
 
 	private void chooseAirport(String xPathDropDownFrom, String xPathDropDownTo, Trip trip) {

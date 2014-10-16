@@ -31,11 +31,11 @@ public abstract class SearchToolInstance {
 	public WaitCondition wait;
 	protected SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 
-	public abstract void searchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract FlightMatches searchFlightsFirstLoop(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
 
-	public abstract void loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract FlightMatches loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
 
-	public abstract ArrayList<FlightDetails> extractFlightDetails(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract FlightMatches extractFlightDetails(DateManager dt_m, FaresManager fare_m, SearchFilter flt);
 
 	protected void chooseDate(String xpathFrom, String xPathTo, DateManager dt_m, boolean oneWay) {
 		WebElement dtInputFrom = driver.findElement(By.xpath(xpathFrom));
