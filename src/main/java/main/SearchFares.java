@@ -1,12 +1,10 @@
 package main;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.inject.Inject;
 
-import enums.NationalAirports;
-import model.Login;
+import enums.Company;
 import model.SearchFilter;
 import navigation.DateManager;
 import navigation.FaresManager;
@@ -30,7 +28,6 @@ public class SearchFares {
 		dt_m = FileReadService.readDates();
 		flt = FileReadService.readSearchType();
 		urls = FileReadService.readUrls();
-		
 	}
 	
 	/**
@@ -44,12 +41,15 @@ public class SearchFares {
 	}
 	
 	private void doSearchSmiles(){
+		trip_m = new TripManager(Company.GOL);
+		
 		this.smiles = new NavigateGolSmiles(urls);
 		this.smiles.loginUserSpace();
-		this.smiles.searchFlights(trip_m, dt_m, fare_m, flt);
+		this.smiles.searchFlights(trip_m.next(), dt_m, fare_m, flt);
 	}
 	
 	private void doSearchMultiplus(){
+		trip_m = new TripManager(Company.TAM);
 		this.multiplus = new NavigateTamMultiplus(urls);
 	}
 	

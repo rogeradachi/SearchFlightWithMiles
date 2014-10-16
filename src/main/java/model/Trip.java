@@ -12,10 +12,10 @@ public class Trip {
 	}
 	
 	public String from(){
-		return this.from.code();
+		return this.from.toString();
 	}
 	
 	public String to(){
-		return this.to.code();
+		return this.to.toString();
 	}
 }
