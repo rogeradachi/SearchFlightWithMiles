@@ -24,33 +24,11 @@ import util.ParserFlightGol;
 import conditional.WaitCondition;
 
 public class NavigateGolSmiles extends SearchToolInstance {
-	private static String golSubmitLoopSearch = "id('search')/div[3]/a";
-	private static String FlyingTime_CSS = ".duracao-voo";
-	private static String Flight_Code_CSS = ".voo-titulo";
-	private static String Fligh_Inbound_CSS = ".chegada-voo";
-	private static String Flight_Outbound_CSS = ".saida-voo";
-	private static String CONTENT_TARIFAS_CSS = ".contentTarifas";
-	private static String CONTENT_FLIGHT_CSS = ".contentFlight";
-	private static String golDropDownListDestination = "id('fs_popUp_destinations[0]')/ul/li";
-	private static String golDropDownListOrigin = "id('fs_popUp_origins[0]')/ul/li";
-	private final String golResultsDeparture = "id('site')/div[6]/div[3]/div";
-	private final String golResultsReturn = "id('site')/div[7]/div[3]/div";
-	private final String golSubmitFirstSearch = "id('toCategory')/a";
-	private final String golInputReturnDay = "id('datepickerInputVolta')";
-	private final String golInputTripDay = "id('datepickerInputIda')";
-	private final String golInputLoginxPath = "id('s_3_1_8_0')";
-	private final String golInputPswdxPath = "id('s_3_1_9_0')";
-	private final String golSubmitLoginxPath = "id('s_3_1_11_0')";
-	private final String golGoToTicketsId = ".//*[@id='s_4_1_4_0']";
-	private final String golOneWayxPath = ".//*[@id='tripRadio']/li[2]/input";
-	private final String golFromxPath = "id('fs_container_origins[0]')/a";
-	private final String golToxPath = "id('fs_container_destinations[0]')/a";
-	private final String golInternalFramexPath = ".//*[@id='symbUrlIFrame2']";
-	
+	private static final String SMILES = "smiles";
 	protected @Inject Login smilesLogin;
 
 	public NavigateGolSmiles(HashMap<String, String> urls) {
-		this.url = urls.get("smiles");
+		this.url = urls.get(SMILES);
 		smilesLogin = FileReadService.readPersonalDetailsFromFile();
 	}
 
@@ -59,31 +37,31 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 		navigateThroughInternalFramesGol();
 
-		inputLogin(smilesLogin.getLogin(), golInputLoginxPath);
-		inputPassWord(smilesLogin.getPassword(), golInputPswdxPath);
-		actionClickElement(golSubmitLoginxPath);
+		inputLogin(smilesLogin.getLogin(), Ids.golInputLoginxPath);
+		inputPassWord(smilesLogin.getPassword(), Ids.golInputPswdxPath);
+		actionClickElement(Ids.golSubmitLoginxPath);
 
 		gotoSmilesSearchPage();
 	}
 
 	private void gotoSmilesSearchPage() {
 		navigateThroughInternalFramesGol();
-		WaitCondition.waitElementVisible(golGoToTicketsId, driver);
-		WaitCondition.waitElementClicable(golGoToTicketsId, driver);
+		WaitCondition.waitElementVisible(Ids.golGoToTicketsId, driver);
+		WaitCondition.waitElementClicable(Ids.golGoToTicketsId, driver);
 
-		actionClickElement(golGoToTicketsId);
-		WaitCondition.waitFrameLoadedxPath(driver, this.golInternalFramexPath);
+		actionClickElement(Ids.golGoToTicketsId);
+		WaitCondition.waitFrameLoadedxPath(driver, Ids.golInternalFramexPath);
 	}
 
 	@Override
 	public void searchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
-		WaitCondition.waitElementClicable(this.golOneWayxPath, driver);
-		this.radioOneWayTrip(flt.getOneWay(), this.golOneWayxPath);
+		WaitCondition.waitElementClicable(Ids.golOneWayxPath, driver);
+		this.radioOneWayTrip(flt.getOneWay(), Ids.golOneWayxPath);
 
-		this.chooseAirport(this.golFromxPath, golToxPath, trip);
-		this.chooseDate(golInputTripDay, golInputReturnDay, dt_m, flt.getOneWay());
+		this.chooseAirport(Ids.golFromxPath, Ids.golToxPath, trip);
+		this.chooseDate(Ids.golInputTripDay, Ids.golInputReturnDay, dt_m, flt.getOneWay());
 
-		this.actionClickElement(golSubmitFirstSearch);
+		this.actionClickElement(Ids.golSubmitFirstSearch);
 
 		this.extractFlightDetails(trip, dt_m, fare_m, flt);
 	}
@@ -92,9 +70,9 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		WaitCondition.waitPageLoaded(driver);
 
 		while (dt_m.forwardPeriod()) {
-			this.chooseDate(golInputTripDay, golInputReturnDay, dt_m, flt.getOneWay());
+			this.chooseDate(Ids.golInputTripDay, Ids.golInputReturnDay, dt_m, flt.getOneWay());
 
-			this.actionClickElement(golSubmitLoopSearch);
+			this.actionClickElement(Ids.golSubmitLoopSearch);
 			this.extractFlightDetails(trip, dt_m, fare_m, flt);
 		}
 	}
@@ -120,17 +98,17 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		//	chooseReturnDate(DATEPICKER_INPUT_VOLTA);
 		//}
 
-		driver.findElement(By.xpath(golSubmitLoopSearch)).click();
+		driver.findElement(By.xpath(Ids.golSubmitLoopSearch)).click();
 	}
 
 	@Override
 	public ArrayList<FlightDetails> extractFlightDetails(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
-		WaitCondition.waitElementVisible(golResultsDeparture, driver);
+		WaitCondition.waitElementVisible(Ids.golResultsDeparture, driver);
 
 		FlightMatches searchMatches = initFlightMatches(dt_m, fare_m, flt);
 
 		// departure flights
-		List<WebElement> departures = driver.findElements(By.xpath(golResultsDeparture));
+		List<WebElement> departures = driver.findElements(By.xpath(Ids.golResultsDeparture));
 		if (departures != null && departures.size() > 0) {
 			departures.remove(0);// remove header
 		}
@@ -138,7 +116,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 		if (!flt.getOneWay()) {
 			// return flights
-			List<WebElement> arrives = driver.findElements(By.xpath(golResultsReturn));
+			List<WebElement> arrives = driver.findElements(By.xpath(Ids.golResultsReturn));
 			arrives.remove(0);// remove header
 
 			searchMatches.setInBoundFlights(extractListDetails(arrives, dt_m.getLatestReturn()));
@@ -149,10 +127,10 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 	private void chooseAirport(String xPathDropDownFrom, String xPathDropDownTo, Trip trip) {
 		driver.findElement(By.xpath(xPathDropDownFrom)).click();
-		chooseFromItemList(driver.findElements(By.xpath(golDropDownListOrigin)), trip.from());
+		chooseFromItemList(driver.findElements(By.xpath(Ids.golDropDownListOrigin)), trip.from());
 
 		driver.findElement(By.xpath(xPathDropDownTo)).click();
-		chooseFromItemList(driver.findElements(By.xpath(golDropDownListDestination)), trip.to());
+		chooseFromItemList(driver.findElements(By.xpath(Ids.golDropDownListDestination)), trip.to());
 	}
 
 	public ArrayList<FlightDetails> extractListDetails(List<WebElement> departures, Calendar flightTime) {
@@ -161,15 +139,15 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		ArrayList<FlightDetails> listaFlights = new ArrayList<FlightDetails>();
 
 		for (WebElement webElement : departures) {
-			WebElement flightDetails = webElement.findElement(By.cssSelector(CONTENT_FLIGHT_CSS));
-			WebElement flightPrice = webElement.findElement(By.cssSelector(CONTENT_TARIFAS_CSS));
+			WebElement flightDetails = webElement.findElement(By.cssSelector(Ids.CONTENT_FLIGHT_CSS));
+			WebElement flightPrice = webElement.findElement(By.cssSelector(Ids.CONTENT_TARIFAS_CSS));
 			// TODO: verificar o conflitos de datas fixas do voo de partida e
 			// chegada (podem ocorrer em dias diferentes e consequentemnte em
 			// anos diferentes)
-			String leave = flightDetails.findElement(By.cssSelector(Flight_Outbound_CSS)).getText();
-			String arrive = flightDetails.findElement(By.cssSelector(Fligh_Inbound_CSS)).getText();
-			String code = flightDetails.findElement(By.cssSelector(Flight_Code_CSS)).getText();
-			String duration = flightDetails.findElement(By.cssSelector(FlyingTime_CSS)).getText();
+			String leave = flightDetails.findElement(By.cssSelector(Ids.Flight_Outbound_CSS)).getText();
+			String arrive = flightDetails.findElement(By.cssSelector(Ids.Fligh_Inbound_CSS)).getText();
+			String code = flightDetails.findElement(By.cssSelector(Ids.Flight_Code_CSS)).getText();
+			String duration = flightDetails.findElement(By.cssSelector(Ids.FlyingTime_CSS)).getText();
 			
 			FlightDetails flight = ParserFlightGol.parseTo(leave, arrive, flightTime, code, duration, flightPrice.getText());
 			if (flight != null) {
@@ -200,11 +178,11 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	}
 
 	private void navigateThroughInternalFramesGol() {
-		WaitCondition.waitFrameLoaded(driver, "_sweclient");
+		WaitCondition.waitFrameLoaded(driver, Ids.golClientFrame);
 		// driver = driver.switchTo().frame(0);// to the first frame
-		WaitCondition.waitFrameLoaded(driver, "_swecontent");
+		WaitCondition.waitFrameLoaded(driver, Ids.golContentFrame);
 		// driver = driver.switchTo().frame(1); // to the swecontent frame
-		WaitCondition.waitFrameLoaded(driver, "_sweview");
+		WaitCondition.waitFrameLoaded(driver, Ids.golViewFrame);
 		// driver = driver.switchTo().frame("_sweview"); // to the main view
 		// frame
 	}
