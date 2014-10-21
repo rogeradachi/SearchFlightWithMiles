@@ -1,13 +1,14 @@
 package main;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.inject.Inject;
 
+import model.FlightMatches;
 import model.SearchFilter;
 import model.Trip;
 import navigation.DateManager;
-import navigation.FaresManager;
 import navigation.TripManager;
 import util.FileReadService;
 import bycompany.NavigateGolSmiles;
@@ -19,16 +20,18 @@ public class SearchFares {
 	protected @Inject NavigateTamMultiplus multiplus;
 
 	protected @Inject DateManager dt_m;
-	protected @Inject FaresManager fare_m;
 	protected @Inject TripManager trip_m;
 	protected @Inject SearchFilter flt;
 	protected boolean oneWay;
 	protected HashMap<String, String> urls;
+	private ArrayList<FlightMatches> matches;
 
 	public SearchFares() {
 		dt_m = FileReadService.readDates();
 		flt = FileReadService.readSearchType();
 		urls = FileReadService.readUrls();
+		
+		matches = new ArrayList<FlightMatches>();
 	}
 
 	/**
@@ -43,26 +46,48 @@ public class SearchFares {
 
 	private void doSearchSmiles(){
 		trip_m = new TripManager(Company.GOL);
+		firstLoopSmiles();
 		
-		this.smiles = new NavigateGolSmiles(urls);
-		this.smiles.loginUserSpace();
-		this.smiles.searchFlightsFirstLoop(trip_m.next(), dt_m, fare_m, flt);
+		FlightMatches match;
 		
 		Trip trip = trip_m.next();
 		while(trip != null){
-			this.smiles.loopSearchFlights(trip, dt_m, fare_m, flt);
-			trip = trip_m.next();
+			match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
+			match.getListResults().addAll(this.smiles.loopSearchFlights(trip, dt_m, flt));
+			
+			this.matches.add(match);
+			
 			this.resetCalendar();
+			trip = trip_m.next();
 		}
+		this.getBestFares();
+		
+		this.smiles.closeDriver();
+	}
+	
+	private void getBestFares(){
+		for (FlightMatches flightMatches : matches) {
+			flightMatches.bestFares();
+		}
+	}
+	
+	private void firstLoopSmiles(){
+		this.smiles = new NavigateGolSmiles(urls);
+		this.smiles.loginUserSpace();
+		Trip trip = trip_m.next();
+		FlightMatches match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
+		match.getListResults().add(this.smiles.searchFlightsFirstLoop(trip, dt_m, flt));
+		match.getListResults().addAll(this.smiles.loopSearchFlights(trip, dt_m, flt));
+		this.matches.add(match);
 	}
 
 	private void doSearchMultiplus() {
 		trip_m = new TripManager(Company.TAM);
-		this.multiplus = new NavigateTamMultiplus(urls);
+		//this.multiplus = new NavigateTamMultiplus(urls);
 	}
 
 	public static void main(String[] args) {
 		SearchFares src = new SearchFares();
-		src.doSearchSmiles();
+		src.doSearchSmiles();		
 	}
 }

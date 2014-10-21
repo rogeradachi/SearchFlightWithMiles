@@ -18,4 +18,12 @@ public class Trip {
 	public String to(){
 		return this.to.toString();
 	}
+	
+	public NationalAirports fromObj(){
+		return this.from;
+	}
+	
+	public NationalAirports toObj(){
+		return this.to;
+	}
 }

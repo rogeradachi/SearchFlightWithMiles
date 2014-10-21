@@ -9,8 +9,8 @@ public class FlightSingleResult {
 
 	private ArrayList<FlightDetails> departureFLights;
 	private ArrayList<FlightDetails> returnFlights;
-	
-	public FlightSingleResult(Calendar departureDate, Calendar returnDate){
+
+	public FlightSingleResult(Calendar departureDate, Calendar returnDate) {
 		this.departureDate = departureDate;
 		this.returnDate = returnDate;
 	}
@@ -50,19 +50,21 @@ public class FlightSingleResult {
 	public void removeUnwantedResults() {
 		if (departureFLights != null) {
 			for (int i = departureFLights.size() - 1; i >= 0; i--) {
-				departureFLights.get(i).getFlightTime().before(departureDate);
-				departureFLights.remove(i);
+				if (departureFLights.get(i).getFlightTime().before(departureDate)) {
+					departureFLights.remove(i);
+				}
 			}
 			this.removeReturnFlights();
 		}
-		
+
 	}
-	
-	private void removeReturnFlights(){
+
+	private void removeReturnFlights() {
 		if (returnFlights != null) {
 			for (int i = returnFlights.size() - 1; i >= 0; i--) {
-				returnFlights.get(i).getFlightTime().after(returnDate);
-				returnFlights.remove(i);
+				if(returnFlights.get(i).getFlightTime().after(returnDate)){
+					returnFlights.remove(i);	
+				}
 			}
 		}
 	}

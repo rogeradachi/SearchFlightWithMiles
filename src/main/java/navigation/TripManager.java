@@ -15,22 +15,23 @@ public class TripManager {
 	private RestrictionFactory restriction;
 	private @Inject ArrayList<NationalAirports> from;
 	private @Inject ArrayList<NationalAirports> to;
-	private int indexFrom;
-	private int indexTo;
+	private int indexTrips;
 	private HashMap<String, ArrayList<NationalAirports>> fromTo;
+	private ArrayList<Trip> trips;
 
 	public TripManager(Company flightCo) {
 		restriction = new RestrictionFactory(flightCo);
-		indexFrom = 0;
-		indexTo = 0;
+		indexTrips = 0;
 		fromTo = FileReadService.fromTo();
 		from = fromTo.get("from");
 		to = fromTo.get("to");
+		trips = new ArrayList<Trip>();
+		initializeTrips();
 	}
 
 	public TripManager() {
-		indexFrom = 0;
-		indexTo = 0;
+		indexTrips = 0;
+		trips = new ArrayList<Trip>();
 	}
 
 	/**
@@ -43,8 +44,7 @@ public class TripManager {
 			restriction = new RestrictionFactory(flightCo);
 		else
 			restriction = null;
-		indexFrom = 0;
-		indexTo = 0;
+		indexTrips = 0;
 	}
 
 	/**
@@ -54,8 +54,7 @@ public class TripManager {
 	 */
 	public void reset() {
 		restriction = null;
-		indexFrom = 0;
-		indexTo = 0;
+		indexTrips = 0;
 	}
 
 	/**
@@ -63,24 +62,21 @@ public class TripManager {
 	 * 
 	 * @return encapsuled object with next trip
 	 */
-	public Trip next() {
-		boolean iterate = false;
-		while (!iterate) {
-			++indexTo;
-			if (indexTo > to.size()) {
-				++indexFrom;
-				indexTo = 0;
-				if (indexFrom > from.size()) {					
-					return null;
-				}
-				iterate = possibleTrip(from.get(indexFrom), to.get(indexTo));
-			}
-			
-			if(iterate){
-				return new Trip(from.get(indexFrom), to.get(indexTo));
+	public Trip next() {	
+		if(indexTrips >= trips.size()){
+			return null;
+		}
+		
+		while(!possibleTrip(trips.get(indexTrips).fromObj(), trips.get(indexTrips).toObj())){
+			++indexTrips;
+			if(indexTrips >= trips.size()){
+				return null;
 			}
 		}
-		return null;
+		Trip nextTrip = trips.get(indexTrips);
+		indexTrips++;
+		
+		return nextTrip;
 	}
 
 	/**
@@ -97,6 +93,14 @@ public class TripManager {
 			return true;
 		} else {
 			return (restriction.attends(from) && restriction.attends(to));
+		}
+	}
+	
+	private void initializeTrips(){
+		for (NationalAirports origins : from) {
+			for (NationalAirports destiny : to) {
+				this.trips.add(new Trip(origins, destiny));
+			}
 		}
 	}
 
@@ -117,7 +121,10 @@ public class TripManager {
 	}
 
 	public NationalAirports From() {
-		return from.get(indexFrom);
+		if(indexTrips < trips.size()){
+			return trips.get(indexTrips).fromObj();
+		}
+		return null;
 	}
 
 	public void setFrom(ArrayList<NationalAirports> from) {
@@ -125,7 +132,10 @@ public class TripManager {
 	}
 
 	public NationalAirports To() {
-		return to.get(indexTo);
+		if(indexTrips < trips.size()){
+			return trips.get(indexTrips).toObj();
+		}
+		return null;
 	}
 
 	public void setTo(ArrayList<NationalAirports> to) {

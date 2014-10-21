@@ -32,4 +32,14 @@ public class SearchFilter {
 	public void setMilesLimit(int milesLimit) {
 		this.milesLimit = milesLimit;
 	}
+	
+	public int getLimit(){
+		if(fareType.getValue() == FareType.MILES.getValue()){
+			return this.milesLimit;
+		}
+		else if(fareType.getValue() == FareType.CASH.getValue()){
+			return this.cashLimit;
+		}
+		return milesLimit;
+	}
 }

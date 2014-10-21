@@ -1,14 +1,12 @@
 package model;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 
-import navigation.FaresManager;
 import enums.NationalAirports;
 
 public class FlightMatches {
-	private FaresManager fr_m;
+	private SearchFilter flt;
 
 	private String company;
 
@@ -28,9 +26,11 @@ public class FlightMatches {
 		this.company = company;
 	}
 
-	public FlightMatches(FaresManager fr_m, boolean oneWay) {
-		this.oneWay = oneWay;
+	public FlightMatches(SearchFilter fr_m, NationalAirports from, NationalAirports to) {
+		this.oneWay = fr_m.getOneWay();
 		listResults = new ArrayList<FlightSingleResult>();
+		this.from = from;
+		this.to = to;
 	}
 
 	public ArrayList<FlightDetails> bestFares() {
@@ -40,7 +40,7 @@ public class FlightMatches {
 				flightSingleResult.removeUnwantedResults();
 				
 				for (int i = flightSingleResult.getDepartureFLights().size() - 1; i >= 0; i--) {					
-					if (flightSingleResult.getDepartureFLights().get(i).getAmount() <= fr_m.getFaresLimit()) {
+					if (flightSingleResult.getDepartureFLights().get(i).getAmount() <= flt.getLimit()) {
 						bestList.add(flightSingleResult.getDepartureFLights().get(i));
 					}
 				}
@@ -51,7 +51,7 @@ public class FlightMatches {
 				
 				for (FlightDetails dep : flightSingleResult.getDepartureFLights()) {
 					for (FlightDetails ret : flightSingleResult.getReturnFlights()) {
-						if (dep.getAmount() + ret.getAmount() <= fr_m.getFaresLimit()) {
+						if (dep.getAmount() + ret.getAmount() <= flt.getLimit()) {
 							bestList.add(this.mergeFlightDetails(dep, ret));
 						}
 					}
@@ -117,12 +117,12 @@ public class FlightMatches {
 		return this.from.code() + "-" + this.to.code();
 	}
 
-	public FaresManager getFr_m() {
-		return fr_m;
+	public SearchFilter getFlt() {
+		return flt;
 	}
 
-	public void setFr_m(FaresManager fr_m) {
-		this.fr_m = fr_m;
+	public void setFlt(SearchFilter flt) {
+		this.flt = flt;
 	}
 
 	public ArrayList<FlightSingleResult> getListResults() {

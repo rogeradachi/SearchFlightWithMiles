@@ -173,7 +173,7 @@ public class FileReadService {
 			}
 
 			int fareType = Integer.parseInt(mapping.get("fareType"));
-			filter.setFareType(fareType == 1 ? FareType.miles : FareType.cash);
+			filter.setFareType(fareType == 1 ? FareType.MILES : FareType.CASH);
 
 			int oneWay = Integer.parseInt(mapping.get("oneWay"));
 			filter.setOneWay(oneWay == 1 ? true : false);

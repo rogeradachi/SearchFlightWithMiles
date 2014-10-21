@@ -7,12 +7,10 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 
 import model.FlightDetails;
-import model.FlightMatches;
 import model.FlightSingleResult;
 import model.SearchFilter;
 import model.Trip;
 import navigation.DateManager;
-import navigation.FaresManager;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -31,11 +29,11 @@ public abstract class SearchToolInstance {
 	public WaitCondition wait;
 	protected SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 
-	public abstract FlightSingleResult searchFlightsFirstLoop(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract FlightSingleResult searchFlightsFirstLoop(Trip trip, DateManager dt_m, SearchFilter flt);
 
-	public abstract ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, SearchFilter flt);
 
-	public abstract FlightSingleResult extractFlightDetails(DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract FlightSingleResult extractFlightDetails(DateManager dt_m, SearchFilter flt);
 
 	protected void chooseDate(String xpathFrom, String xPathTo, DateManager dt_m, boolean oneWay) {
 		WebElement dtInputFrom = driver.findElement(By.xpath(xpathFrom));
@@ -77,6 +75,11 @@ public abstract class SearchToolInstance {
 			driver.manage().timeouts().implicitlyWait(15, TimeUnit.SECONDS);
 			driver.get(url);
 		}
+	}
+	
+	public void closeDriver(){
+		if(driver != null)
+			driver.close();
 	}
 
 }

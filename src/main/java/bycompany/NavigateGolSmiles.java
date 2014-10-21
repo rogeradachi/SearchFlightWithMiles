@@ -8,14 +8,11 @@ import java.util.List;
 import javax.inject.Inject;
 
 import model.FlightDetails;
-import model.FlightMatches;
 import model.FlightSingleResult;
 import model.Login;
 import model.SearchFilter;
-import model.SmilesExtract;
 import model.Trip;
 import navigation.DateManager;
-import navigation.FaresManager;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -55,7 +52,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	}
 
 	@Override
-	public FlightSingleResult searchFlightsFirstLoop(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public FlightSingleResult searchFlightsFirstLoop(Trip trip, DateManager dt_m, SearchFilter flt) {
 		WaitCondition.waitElementClicable(Ids.golOneWayxPath, driver);
 		this.radioOneWayTrip(flt.getOneWay(), Ids.golOneWayxPath);
 
@@ -64,10 +61,10 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 		this.actionClickElement(Ids.golSubmitFirstSearch);
 
-		return this.extractFlightDetails(dt_m, fare_m, flt);
+		return this.extractFlightDetails(dt_m, flt);
 	}
 
-	public ArrayList<FlightSingleResult> loopDates(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public ArrayList<FlightSingleResult> loopDates(Trip trip, DateManager dt_m, SearchFilter flt) {
 		WaitCondition.waitPageLoaded(driver);
 
 		ArrayList<FlightSingleResult> results = new ArrayList<FlightSingleResult>();
@@ -77,7 +74,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 			this.chooseDate(Ids.golInputTripDay, Ids.golInputReturnDay, dt_m, flt.getOneWay());
 
 			this.actionClickElement(Ids.golSubmitLoopSearch);
-			results.add(this.extractFlightDetails(dt_m, fare_m, flt));
+			results.add(this.extractFlightDetails(dt_m, flt));
 		}
 
 		dt_m.resetFlightDates();
@@ -86,17 +83,17 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	}
 
 	@Override
-	public ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, SearchFilter flt) {
 		WaitCondition.waitElementClicable("id('fs_container_origins[0]')/a", driver);
 
 		this.chooseAirport(Ids.golFromxPath, Ids.golToxPath, trip);
-		ArrayList<FlightSingleResult> results = this.loopDates(trip, dt_m, fare_m, flt);
+		ArrayList<FlightSingleResult> results = this.loopDates(trip, dt_m, flt);
 
 		return results;
 	}
 
 	@Override
-	public FlightSingleResult extractFlightDetails(DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public FlightSingleResult extractFlightDetails(DateManager dt_m, SearchFilter flt) {
 		WaitCondition.waitElementVisible(Ids.golResultsDeparture, driver);
 
 		FlightSingleResult singleResult = new FlightSingleResult(dt_m.getEarliestDeparture(), dt_m.getLatestReturn());

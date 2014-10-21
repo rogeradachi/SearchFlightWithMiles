@@ -1,7 +1,7 @@
 package enums;
 
 public enum FareType {
-	miles(1), cash(2);
+	MILES(1), CASH(2);
 	
 	private int value;
 

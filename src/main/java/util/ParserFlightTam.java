@@ -13,8 +13,7 @@ public class ParserFlightTam {
 
 		int amount = getTamAmount(amountLine);
 		if (amount > 0) {
-			details.setFlightCode(flightCode).setFlightTime(departureTime).setArriveTime(arriveTime).setFlightDuration(timeUntilDestination).setAmount(amount)
-					.setCompany(Company.TAM.toString());
+			details.setFlightCode(flightCode).setFlightTime(departureTime).setArriveTime(arriveTime).setFlightDuration(timeUntilDestination).setAmount(amount);
 			return details;
 		} else {
 			return null;
