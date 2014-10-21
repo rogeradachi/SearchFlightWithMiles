@@ -9,6 +9,7 @@ import javax.inject.Inject;
 
 import model.FlightDetails;
 import model.FlightMatches;
+import model.FlightSingleResult;
 import model.Login;
 import model.SearchFilter;
 import model.SmilesExtract;
@@ -54,7 +55,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	}
 
 	@Override
-	public FlightMatches searchFlightsFirstLoop(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public FlightSingleResult searchFlightsFirstLoop(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitElementClicable(Ids.golOneWayxPath, driver);
 		this.radioOneWayTrip(flt.getOneWay(), Ids.golOneWayxPath);
 
@@ -66,74 +67,59 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		return this.extractFlightDetails(dt_m, fare_m, flt);
 	}
 
-	public ArrayList<FlightMatches> loopDates(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public ArrayList<FlightSingleResult> loopDates(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitPageLoaded(driver);
-		
-		ArrayList<FlightMatches> matches = new ArrayList<FlightMatches>();
+
+		ArrayList<FlightSingleResult> results = new ArrayList<FlightSingleResult>();
 
 		while (dt_m.forwardPeriod()) {
+					
 			this.chooseDate(Ids.golInputTripDay, Ids.golInputReturnDay, dt_m, flt.getOneWay());
 
 			this.actionClickElement(Ids.golSubmitLoopSearch);
-			matches.add(this.extractFlightDetails(dt_m, fare_m, flt));
+			results.add(this.extractFlightDetails(dt_m, fare_m, flt));
 		}
-		
+
 		dt_m.resetFlightDates();
-		
-		return matches;
+
+		return results;
 	}
 
 	@Override
-	public FlightMatches loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitElementClicable("id('fs_container_origins[0]')/a", driver);
 
-		/* Departure Airport */
-		/* dropdown list has to become active */
-		driver.findElement(By.xpath("id('fs_container_origins[0]')/a")).click();
-		List<WebElement> originLi = driver.findElements(By.xpath("id('fs_popUp_origins[0]')/ul/li"));
-		//chooseFromItemList(originLi, origem);
+		this.chooseAirport(Ids.golFromxPath, Ids.golToxPath, trip);
+		ArrayList<FlightSingleResult> results = this.loopDates(trip, dt_m, fare_m, flt);
 
-		/* Destination Airport */
-		/* dropdown list has to become active */
-		driver.findElement(By.xpath("id('fs_container_destinations[0]')/a")).click();
-		List<WebElement> destinationLi = driver.findElements(By.xpath("id('fs_popUp_destinations[0]')/ul/li"));
-		//chooseFromItemList(destinationLi, destino);
-
-		//chooseDepartureDate(DATEPICKER_INPUT_IDA);
-		//if (!oneWay) {
-		//	chooseReturnDate(DATEPICKER_INPUT_VOLTA);
-		//}
-
-		driver.findElement(By.xpath(Ids.golSubmitLoopSearch)).click();
-		
-		return extractFlightDetails(dt_m,fare_m, flt);
+		return results;
 	}
 
 	@Override
-	public FlightMatches extractFlightDetails(DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
+	public FlightSingleResult extractFlightDetails(DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
 		WaitCondition.waitElementVisible(Ids.golResultsDeparture, driver);
 
-		FlightMatches searchMatches = initFlightMatches(dt_m, fare_m, flt);
+		FlightSingleResult singleResult = new FlightSingleResult(dt_m.getEarliestDeparture(), dt_m.getLatestReturn());
 
 		// departure flights
 		List<WebElement> departures = driver.findElements(By.xpath(Ids.golResultsDeparture));
 		if (departures != null && departures.size() > 0) {
 			departures.remove(0);// remove header
 		}
-		searchMatches.setOutBoundFlights(extractListDetails(departures, dt_m.getEarliestDeparture()));
+		singleResult.setDepartureFLights(extractListDetails(departures, dt_m.getEarliestDeparture()));
 
 		if (!flt.getOneWay()) {
 			// return flights
 			List<WebElement> arrives = driver.findElements(By.xpath(Ids.golResultsReturn));
 			arrives.remove(0);// remove header
 
-			searchMatches.setInBoundFlights(extractListDetails(arrives, dt_m.getLatestReturn()));
+			singleResult.setReturnFlights(extractListDetails(arrives, dt_m.getLatestReturn()));
 		}
 
-		return searchMatches;
+		return singleResult;
 	}
 
-	private void chooseAirport(String xPathDropDownFrom, String xPathDropDownTo, Trip trip) {
+	public void chooseAirport(String xPathDropDownFrom, String xPathDropDownTo, Trip trip) {
 		driver.findElement(By.xpath(xPathDropDownFrom)).click();
 		chooseFromItemList(driver.findElements(By.xpath(Ids.golDropDownListOrigin)), trip.from());
 
@@ -156,7 +142,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 			String arrive = flightDetails.findElement(By.cssSelector(Ids.Fligh_Inbound_CSS)).getText();
 			String code = flightDetails.findElement(By.cssSelector(Ids.Flight_Code_CSS)).getText();
 			String duration = flightDetails.findElement(By.cssSelector(Ids.FlyingTime_CSS)).getText();
-			
+
 			FlightDetails flight = ParserFlightGol.parseTo(leave, arrive, flightTime, code, duration, flightPrice.getText());
 			if (flight != null) {
 				listaFlights.add(flight);

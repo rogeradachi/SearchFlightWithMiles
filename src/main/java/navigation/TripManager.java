@@ -32,25 +32,27 @@ public class TripManager {
 		indexFrom = 0;
 		indexTo = 0;
 	}
-	
+
 	/**
 	 * Reset the indexes from loop and set new flight company
+	 * 
 	 * @param flightCo
 	 */
-	public void reset(Company flightCo){
-		if( flightCo != null)
+	public void reset(Company flightCo) {
+		if (flightCo != null)
 			restriction = new RestrictionFactory(flightCo);
 		else
 			restriction = null;
 		indexFrom = 0;
 		indexTo = 0;
 	}
-	
+
 	/**
 	 * Reset the indexes from loop and set new flight company
+	 * 
 	 * @param flightCo
 	 */
-	public void reset(){
+	public void reset() {
 		restriction = null;
 		indexFrom = 0;
 		indexTo = 0;
@@ -58,36 +60,42 @@ public class TripManager {
 
 	/**
 	 * Get the next pair origin->destination
+	 * 
 	 * @return encapsuled object with next trip
 	 */
 	public Trip next() {
-		do {
-			if (indexTo >= to.size()) {
-				// next iteraction loop
-				++indexFrom;// TODO verificar a regra para essa soma
+		boolean iterate = false;
+		while (!iterate) {
+			++indexTo;
+			if (indexTo > to.size()) {
+				++indexFrom;
 				indexTo = 0;
-				if (indexFrom >= from.size()) {
-					// list is over
+				if (indexFrom > from.size()) {					
 					return null;
 				}
+				iterate = possibleTrip(from.get(indexFrom), to.get(indexTo));
 			}
-			indexTo++;
-		} while (!possibleTrip(from.get(indexFrom), to.get(indexTo)));
-
-		return new Trip(from.get(indexFrom), to.get(indexTo));
+			
+			if(iterate){
+				return new Trip(from.get(indexFrom), to.get(indexTo));
+			}
+		}
+		return null;
 	}
 
 	/**
 	 * Verify if the 'from' and 'to' arguments are served by given company
-	 * @param from departing airport
-	 * @param to destination airport
+	 * 
+	 * @param from
+	 *            departing airport
+	 * @param to
+	 *            destination airport
 	 * @return TRUE if possible, FALSE otherwise
 	 */
 	private boolean possibleTrip(NationalAirports from, NationalAirports to) {
 		if (this.restriction == null) {
 			return true;
-		}
-		else{
+		} else {
 			return (restriction.attends(from) && restriction.attends(to));
 		}
 	}

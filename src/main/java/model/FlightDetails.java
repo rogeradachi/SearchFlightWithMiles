@@ -3,29 +3,16 @@ package model;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-import enums.NationalAirports;
-
 public class FlightDetails implements Comparable<FlightDetails> {
-	private String company;
 	private String flightCode;
 	private Integer amount;
 	private String flightDuration;
 	private Integer stopOvers;
-	private NationalAirports outbound;
-	private NationalAirports inbound;
 	private Calendar arriveTime;
 	private Calendar flightTime;
 
 	public String getFlightCode() {
 		return flightCode;
-	}
-
-	public String getCompany() {
-		return company;
-	}
-
-	public void setCompany(String company) {
-		this.company = company;
 	}
 
 	public FlightDetails setFlightCode(String flightCode) {
@@ -82,31 +69,13 @@ public class FlightDetails implements Comparable<FlightDetails> {
 	public String toString() {
 		SimpleDateFormat f = new SimpleDateFormat("dd/MM HH'h'mm");
 		
-		return flightCode + ";" + company + ";" + amount + ";" + flightDuration + ";" + stopOvers + ";" + f.format(flightTime.getTime()) + ";"
+		return flightCode + ";" + amount + ";" + flightDuration + ";" + stopOvers + ";" + f.format(flightTime.getTime()) + ";"
 				+ f.format(arriveTime.getTime());
 	}
 
 	@Override
 	public int compareTo(FlightDetails o) {
 		return this.getAmount() - o.getAmount();
-	}
-
-	public NationalAirports getOutbound() {
-		return outbound;
-	}
-
-	public FlightDetails setOutbound(NationalAirports outbound) {
-		this.outbound = outbound;
-		return this;
-	}
-
-	public NationalAirports getInbound() {
-		return inbound;
-	}
-
-	public FlightDetails setInbound(NationalAirports inbound) {
-		this.inbound = inbound;
-		return this;
 	}
 	
 }

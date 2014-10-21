@@ -8,11 +8,11 @@ import javax.inject.Inject;
 
 import model.FlightDetails;
 import model.FlightMatches;
+import model.FlightSingleResult;
 import model.SearchFilter;
 import model.Trip;
 import navigation.DateManager;
 import navigation.FaresManager;
-import navigation.TripManager;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -31,11 +31,11 @@ public abstract class SearchToolInstance {
 	public WaitCondition wait;
 	protected SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
 
-	public abstract FlightMatches searchFlightsFirstLoop(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract FlightSingleResult searchFlightsFirstLoop(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
 
-	public abstract FlightMatches loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, FaresManager fare_m, SearchFilter flt);
 
-	public abstract FlightMatches extractFlightDetails(DateManager dt_m, FaresManager fare_m, SearchFilter flt);
+	public abstract FlightSingleResult extractFlightDetails(DateManager dt_m, FaresManager fare_m, SearchFilter flt);
 
 	protected void chooseDate(String xpathFrom, String xPathTo, DateManager dt_m, boolean oneWay) {
 		WebElement dtInputFrom = driver.findElement(By.xpath(xpathFrom));
@@ -46,19 +46,18 @@ public abstract class SearchToolInstance {
 			WebElement dtInputTo = driver.findElement(By.xpath(xPathTo));
 			String delTo = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 			dtInputTo.sendKeys(delTo + format.format(dt_m.getLatestReturn().getTime()));
-			System.out.println("break");
 		}
 	}
 
-//	protected void chooseAirport(String xpathFrom, String xPathTo, Trip trip) {
-//		WebElement airportFrom = driver.findElement(By.xpath(xpathFrom));
-//		String delFrom = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
-//		airportFrom.sendKeys(delFrom + trip.from());
-//
-//		WebElement airportTo = driver.findElement(By.xpath(xPathTo));
-//		String delTo = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
-//		airportTo.sendKeys(delTo + trip.to());
-//	}
+	protected void chooseAirport(String xpathFrom, String xPathTo, Trip trip) {
+		WebElement airportFrom = driver.findElement(By.xpath(xpathFrom));
+		String delFrom = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
+		airportFrom.sendKeys(delFrom + trip.from());
+
+		WebElement airportTo = driver.findElement(By.xpath(xPathTo));
+		String delTo = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
+		airportTo.sendKeys(delTo + trip.to());
+	}
 
 	protected void radioOneWayTrip(boolean oneway, String xpath) {
 		if (oneway) {
@@ -66,15 +65,7 @@ public abstract class SearchToolInstance {
 			WaitCondition.waitElementClicable(xpath, driver);
 			this.actionClickElement(xpath);
 		}
-	}
-	
-	protected FlightMatches initFlightMatches(DateManager dt_m, FaresManager fare_m, SearchFilter flt) {
-		if (flt.getOneWay()) {
-			return new FlightMatches(fare_m, dt_m.getEarliestDeparture());
-		} else {
-			return new FlightMatches(fare_m, dt_m.getEarliestDeparture(), dt_m.getLatestReturn());
-		}
-	}
+	}	
 
 	protected void actionClickElement(String xpath) {
 		driver.findElement(By.xpath(xpath)).click();

@@ -10,70 +10,65 @@ import enums.NationalAirports;
 public class FlightMatches {
 	private FaresManager fr_m;
 
+	private String company;
+
 	public NationalAirports from;
 	public NationalAirports to;
 
-	private ArrayList<FlightDetails> outBoundFLights;
-	private ArrayList<FlightDetails> inBoundFlights;
 	private ArrayList<FlightDetails> bestFares;
-
-	private Calendar earliestDepartureTime;
-	private Calendar latestReturnTime;
+	private ArrayList<FlightSingleResult> listResults;
 
 	private boolean oneWay;
 
-	public FlightMatches(NationalAirports from, NationalAirports to) {
-		this.from = from;
-		this.to = to;
+	public String getCompany() {
+		return company;
 	}
 
-	public FlightMatches(FaresManager fr_m, Calendar earliestDepartureTime, Calendar latestReturnTime) {
-		this.earliestDepartureTime = earliestDepartureTime;
-		this.latestReturnTime = latestReturnTime;
-		this.oneWay = false;
+	public void setCompany(String company) {
+		this.company = company;
 	}
 
-	public FlightMatches(FaresManager fr_m, Calendar earliestDepartureTime) {
-		this.earliestDepartureTime = earliestDepartureTime;
-		this.oneWay = true;
+	public FlightMatches(FaresManager fr_m, boolean oneWay) {
+		this.oneWay = oneWay;
+		listResults = new ArrayList<FlightSingleResult>();
 	}
 
 	public ArrayList<FlightDetails> bestFares() {
-		ArrayList<FlightDetails> bestFares = new ArrayList<FlightDetails>();
-		this.excludesFlightsNotInTheInterval();
-
+		ArrayList<FlightDetails> bestList = new ArrayList<FlightDetails>();
 		if (oneWay) {
-			ArrayList<FlightDetails> exclude = new ArrayList<FlightDetails>();
-			for (FlightDetails departure : outBoundFLights) {
-				if (!fr_m.belowLimit(departure.getAmount())) {
-					exclude.add(departure);
-				}
-				if( earliestDepartureTime.before(departure.getFlightTime())){
-					exclude.add(departure);
+			for (FlightSingleResult flightSingleResult : listResults) {
+				flightSingleResult.removeUnwantedResults();
+				
+				for (int i = flightSingleResult.getDepartureFLights().size() - 1; i >= 0; i--) {					
+					if (flightSingleResult.getDepartureFLights().get(i).getAmount() <= fr_m.getFaresLimit()) {
+						bestList.add(flightSingleResult.getDepartureFLights().get(i));
+					}
 				}
 			}
-			outBoundFLights.removeAll(exclude);
-			
-			return outBoundFLights;
 		} else {
-			for (FlightDetails departure : outBoundFLights) {
-				for (FlightDetails returning : inBoundFlights) {
-					if (fr_m.belowLimit(departure.getAmount(), returning.getAmount())) {
-						bestFares.add(mergeFlightDetails(departure, returning));
+			for (FlightSingleResult flightSingleResult : listResults) {
+				flightSingleResult.removeUnwantedResults();
+				
+				for (FlightDetails dep : flightSingleResult.getDepartureFLights()) {
+					for (FlightDetails ret : flightSingleResult.getReturnFlights()) {
+						if (dep.getAmount() + ret.getAmount() <= fr_m.getFaresLimit()) {
+							bestList.add(this.mergeFlightDetails(dep, ret));
+						}
 					}
 				}
 			}
 		}
+		addSearchMatches(bestList);
 
-		return bestFares;
+		return bestList;
 	}
 
 	private void clearList() {
-		if (outBoundFLights != null) {
-			this.outBoundFLights.clear();
+		if (bestFares != null) {
+			this.bestFares.clear();
 		}
-		if (inBoundFlights != null) {
-			this.inBoundFlights.clear();
+		if (listResults != null) {
+			this.listResults.clear();
 		}
 	}
 
@@ -89,39 +84,12 @@ public class FlightMatches {
 	public FlightDetails mergeFlightDetails(FlightDetails departureFlight, FlightDetails returnFlight) {
 		FlightDetails merged = new FlightDetails();
 
-		merged.setAmount(departureFlight.getAmount() + returnFlight.getAmount()).setFlightCode(departureFlight.getFlightCode() + "/" + returnFlight.getFlightCode()).setArriveTime(returnFlight.getArriveTime())
+		merged.setAmount(departureFlight.getAmount() + returnFlight.getAmount())
+				.setFlightCode(departureFlight.getFlightCode() + "/" + returnFlight.getFlightCode()).setArriveTime(returnFlight.getArriveTime())
 				.setFlightTime(departureFlight.getFlightTime()).setStopOvers(0).setFlightDuration("");
 		// TODO: Get stopOvers and flying time
 
 		return merged;
-	}
-
-	private void excludesFlightsNotInTheInterval() {
-		this.excludesDepartureFlightsNotInTheInterval();
-
-		if (!oneWay) {
-			this.excludesReturnFlightsNotInTheInterval();
-		}
-	}
-
-	private void excludesDepartureFlightsNotInTheInterval() {
-		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();
-		for (FlightDetails flightDetails : outBoundFLights) {
-			if (flightDetails != null && flightDetails.getFlightTime().before(earliestDepartureTime)) {
-				exclusions.add(flightDetails);
-			}
-		}
-		outBoundFLights.removeAll(exclusions);
-	}
-
-	private void excludesReturnFlightsNotInTheInterval() {
-		ArrayList<FlightDetails> exclusions = new ArrayList<FlightDetails>();
-		for (FlightDetails flightDetails2 : inBoundFlights) {
-			if (flightDetails2 != null && flightDetails2.getFlightTime().after(latestReturnTime)) {
-				exclusions.add(flightDetails2);
-			}
-		}
-		inBoundFlights.removeAll(exclusions);
 	}
 
 	public void addSearchMatches(ArrayList<FlightDetails> flights) {
@@ -135,30 +103,6 @@ public class FlightMatches {
 		if (bestFares != null) {
 			Collections.sort(this.bestFares);
 		}
-	}
-
-	public ArrayList<FlightDetails> getOutBoundFlights() {
-		return outBoundFLights;
-	}
-
-	public void setOutBoundFlights(ArrayList<FlightDetails> departureFlights) {
-		this.outBoundFLights = departureFlights;
-	}
-
-	public ArrayList<FlightDetails> getInBoundFlights() {
-		return inBoundFlights;
-	}
-
-	public void setInBoundFlights(ArrayList<FlightDetails> returnFlights) {
-		this.inBoundFlights = returnFlights;
-	}
-
-	public void setEarliestDepartureTime(Calendar earliestDepartureTime) {
-		this.earliestDepartureTime = earliestDepartureTime;
-	}
-
-	public void setLatestReturnTime(Calendar latestReturnTime) {
-		this.latestReturnTime = latestReturnTime;
 	}
 
 	public ArrayList<FlightDetails> getBestFares() {
@@ -180,4 +124,13 @@ public class FlightMatches {
 	public void setFr_m(FaresManager fr_m) {
 		this.fr_m = fr_m;
 	}
+
+	public ArrayList<FlightSingleResult> getListResults() {
+		return listResults;
+	}
+
+	public void setListResults(ArrayList<FlightSingleResult> listResults) {
+		this.listResults = listResults;
+	}
+
 }

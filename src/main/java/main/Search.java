@@ -129,8 +129,7 @@ public class Search {
 
 		from.add(NationalAirports.SAO);
 
-		to.add(NationalAirports.POA);
-		to.add(NationalAirports.CXJ);
+		to.add(NationalAirports.CNF);
 
 		maximumMilesLimit = 16000;
 		maximumAmountLimit = 500;

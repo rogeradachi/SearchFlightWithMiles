@@ -15,19 +15,16 @@ public class ParserFlightGol {
 
 	public static FlightDetails parseTo(String leave, String arrive, Calendar flightTime, String flightCode, String timeUntilDestination, String amountLine) {
 		FlightDetails details = new FlightDetails();
-		
-		SmilesExtract leaveFlight = extractFlight(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
-				flightTime.get(Calendar.YEAR));
 
-		SmilesExtract arriveFlight = extractFlight(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH),
-				flightTime.get(Calendar.YEAR));
+		SmilesExtract leaveFlight = extractFlight(leave, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
+
+		SmilesExtract arriveFlight = extractFlight(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
 
 		int amount = getGolAmount(amountLine);
 
 		if (amount > 0) {
-			details.setFlightCode(extractGolCode(flightCode)).setInbound(arriveFlight.getAirport()).setOutbound(leaveFlight.getAirport())
-					.setFlightTime(leaveFlight.getExtractedDate()).setArriveTime(arriveFlight.getExtractedDate()).setFlightDuration(timeUntilDestination)
-					.setAmount(amount).setCompany(Company.GOL.toString());
+			details.setFlightCode(extractGolCode(flightCode)).setFlightTime(leaveFlight.getExtractedDate()).setArriveTime(arriveFlight.getExtractedDate())
+					.setFlightDuration(timeUntilDestination).setAmount(amount);
 			return details;
 		} else {
 			return null;
