@@ -84,7 +84,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 	@Override
 	public ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, SearchFilter flt) {
-		WaitCondition.waitElementClicable("id('fs_container_origins[0]')/a", driver);
+		WaitCondition.waitElementClicable(Ids.golFromxPath, driver);
 
 		this.chooseAirport(Ids.golFromxPath, Ids.golToxPath, trip);
 		ArrayList<FlightSingleResult> results = this.loopDates(trip, dt_m, flt);

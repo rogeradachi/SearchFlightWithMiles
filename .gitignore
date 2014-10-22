@@ -5,3 +5,4 @@ target/
 .settings/
 *.txt
 /target/
+*.ods

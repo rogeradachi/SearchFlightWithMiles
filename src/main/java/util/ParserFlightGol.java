@@ -20,11 +20,14 @@ public class ParserFlightGol {
 
 		SmilesExtract arriveFlight = extractFlight(arrive, flightTime.get(Calendar.DATE), flightTime.get(Calendar.MONTH), flightTime.get(Calendar.YEAR));
 
+		String[] stops = extractGolStopOvers(timeUntilDestination);
+
 		int amount = getGolAmount(amountLine);
 
 		if (amount > 0) {
 			details.setFlightCode(extractGolCode(flightCode)).setFlightTime(leaveFlight.getExtractedDate()).setArriveTime(arriveFlight.getExtractedDate())
-					.setFlightDuration(timeUntilDestination).setAmount(amount);
+					.setFlightDuration(stops[1]).setAmount(amount).setOriginAirport(leaveFlight.getAirport()).setDestinationAirport(arriveFlight.getAirport())
+					.setStopOvers(stops[0]);
 			return details;
 		} else {
 			return null;
@@ -70,6 +73,18 @@ public class ParserFlightGol {
 			}
 		}
 		return null;
+	}
+
+	private static String[] extractGolStopOvers(String stopOver) {
+		String[] flightTime = stopOver.split(":");
+		String[] result = new String[2];
+
+		if (flightTime != null && flightTime.length > 0) {
+			result[0] = flightTime[0].substring(0, 1);
+			result[1] = flightTime[1].replaceAll("\\s", "");
+		}
+
+		return result;
 	}
 
 	private static int getGolAmount(String value) {

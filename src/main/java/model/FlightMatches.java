@@ -16,8 +16,6 @@ public class FlightMatches {
 	private ArrayList<FlightDetails> bestFares;
 	private ArrayList<FlightSingleResult> listResults;
 
-	private boolean oneWay;
-
 	public String getCompany() {
 		return company;
 	}
@@ -27,15 +25,15 @@ public class FlightMatches {
 	}
 
 	public FlightMatches(SearchFilter fr_m, NationalAirports from, NationalAirports to) {
-		this.oneWay = fr_m.getOneWay();
 		listResults = new ArrayList<FlightSingleResult>();
 		this.from = from;
 		this.to = to;
+		this.flt = fr_m;
 	}
 
 	public ArrayList<FlightDetails> bestFares() {
 		ArrayList<FlightDetails> bestList = new ArrayList<FlightDetails>();
-		if (oneWay) {
+		if (flt.getOneWay()) {
 			for (FlightSingleResult flightSingleResult : listResults) {
 				flightSingleResult.removeUnwantedResults();
 				
@@ -59,11 +57,12 @@ public class FlightMatches {
 			}
 		}
 		addSearchMatches(bestList);
+		this.sortMatches();
 
-		return bestList;
+		return this.bestFares;
 	}
 
-	private void clearList() {
+	public void clearList() {
 		if (bestFares != null) {
 			this.bestFares.clear();
 		}
@@ -84,10 +83,9 @@ public class FlightMatches {
 	public FlightDetails mergeFlightDetails(FlightDetails departureFlight, FlightDetails returnFlight) {
 		FlightDetails merged = new FlightDetails();
 
-		merged.setAmount(departureFlight.getAmount() + returnFlight.getAmount())
-				.setFlightCode(departureFlight.getFlightCode() + "/" + returnFlight.getFlightCode()).setArriveTime(returnFlight.getArriveTime())
-				.setFlightTime(departureFlight.getFlightTime()).setStopOvers(0).setFlightDuration("");
-		// TODO: Get stopOvers and flying time
+		merged.setAmount(departureFlight.getAmount() + returnFlight.getAmount()).setOriginAirport(departureFlight.getOriginAirport()).setDestinationAirport(departureFlight.getDestinationAirport())
+				.setFlightCode(departureFlight.getFlightCode() + " \\ " + returnFlight.getFlightCode()).setArriveTime(returnFlight.getArriveTime())
+				.setFlightTime(departureFlight.getFlightTime()).setStopOvers(departureFlight.getStopOvers() + " \\ " + returnFlight.getStopOvers()).setFlightDuration(departureFlight.getFlightDuration() + " \\ " + returnFlight.getFlightDuration());
 
 		return merged;
 	}
@@ -96,13 +94,20 @@ public class FlightMatches {
 		if (bestFares == null) {
 			bestFares = new ArrayList<FlightDetails>();
 		}
-		this.bestFares.addAll(flights);
+		this.bestFares.addAll(flights);		
 	}
 
 	public void sortMatches() {
 		if (bestFares != null) {
 			Collections.sort(this.bestFares);
 		}
+	}
+	
+	public ArrayList<FlightDetails> sortMatches(ArrayList<FlightDetails> bestFares) {
+		if (bestFares != null) {
+			Collections.sort(bestFares);
+		}
+		return bestFares;
 	}
 
 	public ArrayList<FlightDetails> getBestFares() {
@@ -131,6 +136,14 @@ public class FlightMatches {
 
 	public void setListResults(ArrayList<FlightSingleResult> listResults) {
 		this.listResults = listResults;
+	}
+	
+	public void addListResults(ArrayList<FlightSingleResult> listResults){
+		this.listResults.addAll(listResults);
+	}
+	
+	public void addListResults(FlightSingleResult listResults){
+		this.listResults.add(listResults);
 	}
 
 }

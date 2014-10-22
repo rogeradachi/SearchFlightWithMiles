@@ -11,24 +11,24 @@ public class FlightSingleResult {
 	private ArrayList<FlightDetails> returnFlights;
 
 	public FlightSingleResult(Calendar departureDate, Calendar returnDate) {
-		this.departureDate = departureDate;
-		this.returnDate = returnDate;
+		this.departureDate = (Calendar) departureDate.clone();
+		this.returnDate = (Calendar) returnDate.clone();
 	}
 
 	public Calendar getDepartureDate() {
-		return departureDate;
+		return (Calendar) departureDate.clone();
 	}
 
 	public void setDepartureDate(Calendar departureDate) {
-		this.departureDate = departureDate;
+		this.departureDate = (Calendar) departureDate.clone();
 	}
 
 	public Calendar getReturnDate() {
-		return returnDate;
+		return (Calendar) returnDate.clone();
 	}
 
 	public void setReturnDate(Calendar returnDate) {
-		this.returnDate = returnDate;
+		this.returnDate = (Calendar) returnDate.clone();
 	}
 
 	public ArrayList<FlightDetails> getDepartureFLights() {

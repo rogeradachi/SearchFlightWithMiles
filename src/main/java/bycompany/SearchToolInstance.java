@@ -77,9 +77,9 @@ public abstract class SearchToolInstance {
 		}
 	}
 	
-	public void closeDriver(){
-		if(driver != null)
-			driver.close();
-	}
+//	public void closeDriver(){
+//		if(driver != null)
+//			driver.close();
+//	}
 
 }

@@ -18,20 +18,21 @@ import java.util.Locale;
 import model.FlightDetails;
 import navigation.DateManager;
 import enums.Company;
+import enums.FareType;
 import enums.FileName;
 import enums.NationalAirports;
 
 public class FileStream {
-	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to) throws FileNotFoundException,
+	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to, Company company, FareType fare) throws FileNotFoundException,
 			UnsupportedEncodingException {
 		PrintWriter writer;
 		try {
 			String filename = String.format(FileName.resultFile.getValue(), from.code(), to.code());
 			writer = new PrintWriter(new BufferedWriter(new FileWriter(filename, false)));
 
-			writeHeader(writer);
+			writeHeader(writer, fare);
 			for (FlightDetails flight : flightList) {
-				writer.println(from.code() + ";" + to.code() + ";" + flight.toString());
+				writer.println(company.getValue() + ";"  + flight.toString());
 			}
 			writer.close();
 		} catch (IOException e) {
@@ -40,11 +41,11 @@ public class FileStream {
 		}
 	}
 
-	private static void writeHeader(PrintWriter writer) {
+	private static void writeHeader(PrintWriter writer, FareType fareType) {
 		StringBuilder header = new StringBuilder();
-		header.append("Código IDA/VOLTA").append(";").append("Quanto?").append(";").append("De").append(";").append("PARA").append(";").append("Paradas")
-				.append(";").append("Horário IDA").append(";").append("Horário VOLTA").append(";");
-		writer.println();
+		header.append("Companhia").append(";").append("Código IDA \\ VOLTA").append(";").append("De").append(";").append("PARA").append(";").append("Valor("+ fareType.toString()+ ")")
+				.append(";").append("Duração IDA \\ VOLTA").append(";").append("Paradas IDA \\ VOLTA").append(";").append("Horário IDA").append(";").append("Horário VOLTA");
+		writer.println(header.toString());
 	}
 
 	public static HashMap<String, String> readPersonalDetailsFromFile() {

@@ -84,19 +84,19 @@ public class DateManager {
 	}
 
 	public Calendar getEarliestDeparture() {
-		return earliestDeparture;
+		return (Calendar) earliestDeparture.clone();
 	}
 
 	public Calendar getLatestReturn() {
-		return latestReturn;
+		return (Calendar) latestReturn.clone();
 	}
 
 	public Calendar getStartWindowDate() {
-		return startWindowDate;
+		return (Calendar) startWindowDate.clone();
 	}
 
 	public Calendar getEndWindowDate() {
-		return endWindowDate;
+		return (Calendar) endWindowDate.clone();
 	}
 
 	public String getTravelDayofWeek() {
@@ -127,10 +127,10 @@ public class DateManager {
 	}
 
 	public void setStartWindowDate(Calendar startWindowDate) {
-		this.startWindowDate = startWindowDate;
+		this.startWindowDate = (Calendar) startWindowDate.clone();
 	}
 
 	public void setEndWindowDate(Calendar endWindowDate) {
-		this.endWindowDate = endWindowDate;
+		this.endWindowDate = (Calendar) endWindowDate.clone();
 	}
 }

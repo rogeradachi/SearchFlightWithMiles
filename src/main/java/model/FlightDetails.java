@@ -3,13 +3,35 @@ package model;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
+import enums.NationalAirports;
+
 public class FlightDetails implements Comparable<FlightDetails> {
+	private NationalAirports originAirport;
+	private NationalAirports destinationAirport;
 	private String flightCode;
 	private Integer amount;
 	private String flightDuration;
-	private Integer stopOvers;
+	private String stopOvers;
 	private Calendar arriveTime;
 	private Calendar flightTime;
+
+	public NationalAirports getOriginAirport() {
+		return originAirport;
+	}
+
+	public FlightDetails setOriginAirport(NationalAirports originAirport) {
+		this.originAirport = originAirport;
+		return this;
+	}
+
+	public NationalAirports getDestinationAirport() {
+		return destinationAirport;
+	}
+
+	public FlightDetails setDestinationAirport(NationalAirports destinationAirport) {
+		this.destinationAirport = destinationAirport;
+		return this;
+	}
 
 	public String getFlightCode() {
 		return flightCode;
@@ -38,11 +60,11 @@ public class FlightDetails implements Comparable<FlightDetails> {
 		return this;
 	}
 
-	public Integer getStopOvers() {
+	public String getStopOvers() {
 		return stopOvers;
 	}
 
-	public FlightDetails setStopOvers(Integer stopOvers) {
+	public FlightDetails setStopOvers(String stopOvers) {
 		this.stopOvers = stopOvers;
 		return this;
 	}
@@ -69,7 +91,7 @@ public class FlightDetails implements Comparable<FlightDetails> {
 	public String toString() {
 		SimpleDateFormat f = new SimpleDateFormat("dd/MM HH'h'mm");
 		
-		return flightCode + ";" + amount + ";" + flightDuration + ";" + stopOvers + ";" + f.format(flightTime.getTime()) + ";"
+		return flightCode + ";" + this.getOriginAirport().code() + ";" + this.getDestinationAirport().code() + ";" + amount + ";" + flightDuration + ";" + stopOvers + ";" + f.format(flightTime.getTime()) + ";"
 				+ f.format(arriveTime.getTime());
 	}
 

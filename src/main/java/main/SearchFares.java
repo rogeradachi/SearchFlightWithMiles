@@ -1,16 +1,20 @@
 package main;
 
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.inject.Inject;
 
+import model.FlightDetails;
 import model.FlightMatches;
 import model.SearchFilter;
 import model.Trip;
 import navigation.DateManager;
 import navigation.TripManager;
 import util.FileReadService;
+import util.FileStream;
 import bycompany.NavigateGolSmiles;
 import bycompany.NavigateTamMultiplus;
 import enums.Company;
@@ -25,6 +29,7 @@ public class SearchFares {
 	protected boolean oneWay;
 	protected HashMap<String, String> urls;
 	private ArrayList<FlightMatches> matches;
+	private ArrayList<FlightDetails> bestFares;
 
 	public SearchFares() {
 		dt_m = FileReadService.readDates();
@@ -41,10 +46,7 @@ public class SearchFares {
 		dt_m.resetFlightDates();
 	}
 
-	public void doSearch() {
-	}
-
-	private void doSearchSmiles(){
+	private void doSearchSmiles() throws FileNotFoundException, UnsupportedEncodingException{
 		trip_m = new TripManager(Company.GOL);
 		firstLoopSmiles();
 		
@@ -57,28 +59,34 @@ public class SearchFares {
 			
 			this.matches.add(match);
 			
+			this.getBestFares();
+			FileStream.outputResults(bestFares, trip.fromObj(), trip.toObj(), Company.GOL, flt.getFareType());
+			
 			this.resetCalendar();
 			trip = trip_m.next();
 		}
-		this.getBestFares();
-		
-		this.smiles.closeDriver();
 	}
 	
 	private void getBestFares(){
 		for (FlightMatches flightMatches : matches) {
-			flightMatches.bestFares();
+			bestFares = flightMatches.bestFares();			
 		}
 	}
 	
-	private void firstLoopSmiles(){
+	private void firstLoopSmiles() throws FileNotFoundException, UnsupportedEncodingException{
 		this.smiles = new NavigateGolSmiles(urls);
 		this.smiles.loginUserSpace();
+		
 		Trip trip = trip_m.next();
+		
 		FlightMatches match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
-		match.getListResults().add(this.smiles.searchFlightsFirstLoop(trip, dt_m, flt));
-		match.getListResults().addAll(this.smiles.loopSearchFlights(trip, dt_m, flt));
+		match.addListResults(this.smiles.searchFlightsFirstLoop(trip, dt_m, flt));
+		match.addListResults(this.smiles.loopSearchFlights(trip, dt_m, flt));
+		
 		this.matches.add(match);
+		
+		this.getBestFares();
+		FileStream.outputResults(bestFares, trip.fromObj(), trip.toObj(), Company.GOL, flt.getFareType());
 	}
 
 	private void doSearchMultiplus() {
@@ -88,6 +96,17 @@ public class SearchFares {
 
 	public static void main(String[] args) {
 		SearchFares src = new SearchFares();
-		src.doSearchSmiles();		
+			try {
+				src.doSearchSmiles();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			finally{
+				src.smiles.driver.close();
+			}
 	}
 }

@@ -26,7 +26,7 @@ import enums.NationalAirports;
 
 public class FileReadService {
 	
-	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to) throws FileNotFoundException, UnsupportedEncodingException {
+	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to, String company) throws FileNotFoundException, UnsupportedEncodingException {
 		PrintWriter writer;
 		try {
 			String filename = String.format("src/main/results/" + FileName.resultFile.getValue(), from.code(), to.code());
@@ -34,7 +34,7 @@ public class FileReadService {
 
 			writeHeader(writer);
 			for (FlightDetails flight : flightList) {
-				writer.println(from.code() + ";" + to.code() + ";" + flight.toString());
+				writer.println(company + ";" +  flight.toString());
 			}
 			writer.close();
 		} catch (IOException e) {
@@ -178,8 +178,8 @@ public class FileReadService {
 			int oneWay = Integer.parseInt(mapping.get("oneWay"));
 			filter.setOneWay(oneWay == 1 ? true : false);
 			
-			filter.setCashLimit(Integer.parseInt(mapping.get("milesLimit")));
-			filter.setMilesLimit(Integer.parseInt(mapping.get("cashLimit")));
+			filter.setMilesLimit(Integer.parseInt(mapping.get("milesLimit")));
+			filter.setCashLimit(Integer.parseInt(mapping.get("cashLimit")));
 		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
