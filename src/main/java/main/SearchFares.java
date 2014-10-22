@@ -30,6 +30,7 @@ public class SearchFares {
 	protected HashMap<String, String> urls;
 	private ArrayList<FlightMatches> matches;
 	private ArrayList<FlightDetails> bestFares;
+	private HashMap<String, FlightMatches> resultMatches;
 
 	public SearchFares() {
 		dt_m = FileReadService.readDates();
@@ -37,6 +38,7 @@ public class SearchFares {
 		urls = FileReadService.readUrls();
 		
 		matches = new ArrayList<FlightMatches>();
+		resultMatches = new HashMap<String, FlightMatches>();
 	}
 
 	/**
@@ -57,19 +59,21 @@ public class SearchFares {
 			match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
 			match.getListResults().addAll(this.smiles.loopSearchFlights(trip, dt_m, flt));
 			
-			this.matches.add(match);
-			
-			this.getBestFares();
-			FileStream.outputResults(bestFares, trip.fromObj(), trip.toObj(), Company.GOL, flt.getFareType());
+			addMatches(match);
 			
 			this.resetCalendar();
 			trip = trip_m.next();
 		}
 	}
 	
+	private void endOrganizeResults(){
+		this.getBestFares();
+		//FileStream.outputResults(flightList, from, to, company, fare);
+	}
+	
 	private void getBestFares(){
 		for (FlightMatches flightMatches : matches) {
-			bestFares = flightMatches.bestFares();			
+			flightMatches.bestFares();			
 		}
 	}
 	
@@ -83,15 +87,26 @@ public class SearchFares {
 		match.addListResults(this.smiles.searchFlightsFirstLoop(trip, dt_m, flt));
 		match.addListResults(this.smiles.loopSearchFlights(trip, dt_m, flt));
 		
-		this.matches.add(match);
-		
-		this.getBestFares();
-		FileStream.outputResults(bestFares, trip.fromObj(), trip.toObj(), Company.GOL, flt.getFareType());
+		addMatches(match);
 	}
 
 	private void doSearchMultiplus() {
 		trip_m = new TripManager(Company.TAM);
 		//this.multiplus = new NavigateTamMultiplus(urls);
+	}
+	
+	private void addMatches(FlightMatches searchMatches) {
+		if (searchMatches != null) {
+			searchMatches.sortMatches();
+			if (resultMatches.containsKey(searchMatches.getKey())) {
+				FlightMatches matches = resultMatches.remove(searchMatches.getKey());
+				matches.getBestFares().addAll(searchMatches.getBestFares());
+				resultMatches.put(searchMatches.getKey(), matches);
+			} else {
+				resultMatches.put(searchMatches.getKey(), searchMatches);
+			}
+		}
+
 	}
 
 	public static void main(String[] args) {

@@ -56,10 +56,9 @@ public class FlightMatches {
 				}
 			}
 		}
-		addSearchMatches(bestList);
-		this.sortMatches();
+		this.sortMatches(bestList);
 
-		return this.bestFares;
+		return bestList;
 	}
 
 	public void clearList() {
