@@ -24,6 +24,17 @@ public class Ids {
 	public static String golToxPath = "id('fs_container_destinations[0]')/a";
 	public static String golInternalFramexPath = ".//*[@id='symbUrlIFrame2']";
 	public static String golClientFrame = "_sweclient";
-	public static String golContentFrame= "_swecontent";
+	public static String golContentFrame = "_swecontent";
 	public static String golViewFrame = "_sweview";
+	public static String multiPlusMilesxPath = ".//*[@id='passenger_useMyPoints']";
+	public static String multiPlusOneWayXpath = ".//*[@id='oneway']";
+	public static String multiPlusReturnDatexPath = ".//*[@id='search_inbound_date']";
+	public static String multiPlusOriginxPath = ".//*[@id='search_from']";
+	public static String multiPlusDestinationxPath = ".//*[@id='search_to']";
+	public static String multiPlusFlightDatexPath = ".//*[@id='search_outbound_date']";
+	public static String multiPlusSubmitFirstxPath = ".//*[@id='onlineSearchSubmitButton']";
+	public static String multiPlusResultTableFlightxPath = ".//*[@id='outbound_list_flight_direct']/tbody";
+	public static String multiPlusResultTableReturnsxPath = ".//*[@id='inbound_list_flight_direct']/tbody";
+	public static String multiPlusFlight_CSS = ".flight";
+	public static String multiPlusTD_CSS = "td";
 }

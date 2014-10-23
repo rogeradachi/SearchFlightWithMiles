@@ -79,6 +79,7 @@ public abstract class SearchToolInstance {
 			driver.manage().timeouts().implicitlyWait(15, TimeUnit.SECONDS);
 			driver.get(url);
 		}
+		WaitCondition.waitPageLoaded(driver);
 	}
 	
 //	public void closeDriver(){
