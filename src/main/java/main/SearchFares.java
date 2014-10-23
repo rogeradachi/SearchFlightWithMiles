@@ -20,7 +20,7 @@ import bycompany.NavigateTamMultiplus;
 import enums.Company;
 
 public class SearchFares {
-	protected @Inject NavigateGolSmiles smiles;
+	
 	protected @Inject NavigateTamMultiplus multiplus;
 
 	protected @Inject DateManager dt_m;
@@ -31,6 +31,7 @@ public class SearchFares {
 	private ArrayList<FlightMatches> matches;
 	private ArrayList<FlightDetails> bestFares;
 	private HashMap<String, FlightMatches> resultMatches;
+	private NavigateGolSmiles smiles;
 
 	public SearchFares() {
 		dt_m = FileReadService.readDates();
@@ -47,24 +48,6 @@ public class SearchFares {
 	private void resetCalendar() {
 		dt_m.resetFlightDates();
 	}
-
-	private void doSearchSmiles() throws FileNotFoundException, UnsupportedEncodingException{
-		trip_m = new TripManager(Company.GOL);
-		firstLoopSmiles();
-		
-		FlightMatches match;
-		
-		Trip trip = trip_m.next();
-		while(trip != null){
-			match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
-			match.getListResults().addAll(this.smiles.loopSearchFlights(trip, dt_m, flt));
-			
-			addMatches(match);
-			
-			this.resetCalendar();
-			trip = trip_m.next();
-		}
-	}
 	
 	private void endOrganizeResults(){
 		this.getBestFares();
@@ -76,37 +59,35 @@ public class SearchFares {
 			flightMatches.bestFares();			
 		}
 	}
-	
-	private void firstLoopSmiles() throws FileNotFoundException, UnsupportedEncodingException{
-		this.smiles = new NavigateGolSmiles(urls);
-		this.smiles.loginUserSpace();
-		
-		Trip trip = trip_m.next();
-		
-		FlightMatches match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
-		match.addListResults(this.smiles.searchFlightsFirstLoop(trip, dt_m, flt));
-		match.addListResults(this.smiles.loopSearchFlights(trip, dt_m, flt));
-		
-		addMatches(match);
-	}
 
 	private void doSearchMultiplus() {
 		trip_m = new TripManager(Company.TAM);
-		//this.multiplus = new NavigateTamMultiplus(urls);
+		
+		NavigateTamMultiplus multiplus = new NavigateTamMultiplus(urls, flt, trip_m, dt_m);
 	}
 	
-	private void addMatches(FlightMatches searchMatches) {
-		if (searchMatches != null) {
-			searchMatches.sortMatches();
-			if (resultMatches.containsKey(searchMatches.getKey())) {
-				FlightMatches matches = resultMatches.remove(searchMatches.getKey());
-				matches.getBestFares().addAll(searchMatches.getBestFares());
-				resultMatches.put(searchMatches.getKey(), matches);
-			} else {
-				resultMatches.put(searchMatches.getKey(), searchMatches);
-			}
+	private void addMatches() {
+		for (FlightMatches searchMatches : matches) {
+			if (searchMatches != null) {
+				searchMatches.sortMatches();
+				if (resultMatches.containsKey(searchMatches.getKey())) {
+					FlightMatches matches = resultMatches.remove(searchMatches.getKey());
+					matches.getBestFares().addAll(searchMatches.getBestFares());
+					resultMatches.put(searchMatches.getKey(), matches);
+				} else {
+					resultMatches.put(searchMatches.getKey(), searchMatches);
+				}
+			}	
 		}
-
+	}
+	
+	public void doSearchSmiles() throws FileNotFoundException, UnsupportedEncodingException{
+		trip_m = new TripManager(Company.GOL);
+		
+		NavigateGolSmiles smiles = new NavigateGolSmiles(urls,flt, trip_m, dt_m);
+		matches.add(smiles.firstLoopSmiles());
+		matches.addAll(smiles.doSearchSmiles());
+		addMatches();
 	}
 
 	public static void main(String[] args) {
@@ -119,9 +100,6 @@ public class SearchFares {
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
-			finally{
-				src.smiles.driver.close();
 			}
 	}
 }

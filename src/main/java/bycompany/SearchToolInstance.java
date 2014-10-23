@@ -11,6 +11,7 @@ import model.FlightSingleResult;
 import model.SearchFilter;
 import model.Trip;
 import navigation.DateManager;
+import navigation.TripManager;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
@@ -28,12 +29,15 @@ public abstract class SearchToolInstance {
 	public WebDriver driver;
 	public WaitCondition wait;
 	protected SimpleDateFormat format = new SimpleDateFormat(DD_MM_YYYY);
+	protected @Inject DateManager dt_m;
+	protected @Inject TripManager trip_m;
+	protected @Inject SearchFilter flt;
 
-	public abstract FlightSingleResult searchFlightsFirstLoop(Trip trip, DateManager dt_m, SearchFilter flt);
+	public abstract FlightSingleResult searchFlightsFirstLoop(Trip trip);
 
-	public abstract ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, SearchFilter flt);
+	public abstract ArrayList<FlightSingleResult> loopSearchFlights(Trip trip);
 
-	public abstract FlightSingleResult extractFlightDetails(DateManager dt_m, SearchFilter flt);
+	public abstract FlightSingleResult extractFlightDetails();
 
 	protected void chooseDate(String xpathFrom, String xPathTo, DateManager dt_m, boolean oneWay) {
 		WebElement dtInputFrom = driver.findElement(By.xpath(xpathFrom));

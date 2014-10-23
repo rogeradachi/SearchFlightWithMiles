@@ -1,5 +1,7 @@
 package bycompany;
 
+import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -8,11 +10,13 @@ import java.util.List;
 import javax.inject.Inject;
 
 import model.FlightDetails;
+import model.FlightMatches;
 import model.FlightSingleResult;
 import model.Login;
 import model.SearchFilter;
 import model.Trip;
 import navigation.DateManager;
+import navigation.TripManager;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
@@ -20,14 +24,51 @@ import org.openqa.selenium.WebElement;
 import util.FileReadService;
 import util.ParserFlightGol;
 import conditional.WaitCondition;
+import enums.Company;
 
 public class NavigateGolSmiles extends SearchToolInstance {
 	private static final String SMILES = "smiles";
 	protected @Inject Login smilesLogin;
 
-	public NavigateGolSmiles(HashMap<String, String> urls) {
+	public NavigateGolSmiles(HashMap<String, String> urls, SearchFilter flt, TripManager trip_m, DateManager dt_m) {
 		this.url = urls.get(SMILES);
+		this.flt = flt;
+		this.trip_m = trip_m;
+		this.dt_m = dt_m;
 		smilesLogin = FileReadService.readPersonalDetailsFromFile();
+	}
+	
+	public FlightMatches firstLoopSmiles() throws FileNotFoundException, UnsupportedEncodingException{
+		this.loginUserSpace();
+		
+		Trip trip = trip_m.next();
+		
+		FlightMatches match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
+		match.addListResults(this.searchFlightsFirstLoop(trip));
+		match.addListResults(this.loopSearchFlights(trip));
+		
+		return match;
+	}
+	
+	public ArrayList<FlightMatches> doSearchSmiles() throws FileNotFoundException, UnsupportedEncodingException{
+		trip_m = new TripManager(Company.GOL);
+		firstLoopSmiles();
+		
+		ArrayList<FlightMatches> matches = new ArrayList<FlightMatches>();
+		FlightMatches match;
+		
+		Trip trip = trip_m.next();
+		while(trip != null){
+			match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
+			match.getListResults().addAll(this.loopSearchFlights(trip));
+			
+			matches.add(match);
+			
+			dt_m.resetFlightDates();
+			trip = trip_m.next();
+		}
+		
+		return matches;
 	}
 
 	public void loginUserSpace() {
@@ -52,7 +93,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	}
 
 	@Override
-	public FlightSingleResult searchFlightsFirstLoop(Trip trip, DateManager dt_m, SearchFilter flt) {
+	public FlightSingleResult searchFlightsFirstLoop(Trip trip) {
 		WaitCondition.waitElementClicable(Ids.golOneWayxPath, driver);
 		this.radioOneWayTrip(flt.getOneWay(), Ids.golOneWayxPath);
 
@@ -61,7 +102,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 		this.actionClickElement(Ids.golSubmitFirstSearch);
 
-		return this.extractFlightDetails(dt_m, flt);
+		return this.extractFlightDetails();
 	}
 
 	public ArrayList<FlightSingleResult> loopDates(Trip trip, DateManager dt_m, SearchFilter flt) {
@@ -74,7 +115,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 			this.chooseDate(Ids.golInputTripDay, Ids.golInputReturnDay, dt_m, flt.getOneWay());
 
 			this.actionClickElement(Ids.golSubmitLoopSearch);
-			results.add(this.extractFlightDetails(dt_m, flt));
+			results.add(this.extractFlightDetails());
 		}
 
 		dt_m.resetFlightDates();
@@ -83,7 +124,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	}
 
 	@Override
-	public ArrayList<FlightSingleResult> loopSearchFlights(Trip trip, DateManager dt_m, SearchFilter flt) {
+	public ArrayList<FlightSingleResult> loopSearchFlights(Trip trip) {
 		WaitCondition.waitElementClicable(Ids.golFromxPath, driver);
 
 		this.chooseAirport(Ids.golFromxPath, Ids.golToxPath, trip);
@@ -93,7 +134,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 	}
 
 	@Override
-	public FlightSingleResult extractFlightDetails(DateManager dt_m, SearchFilter flt) {
+	public FlightSingleResult extractFlightDetails() {
 		WaitCondition.waitElementVisible(Ids.golResultsDeparture, driver);
 
 		FlightSingleResult singleResult = new FlightSingleResult(dt_m.getEarliestDeparture(), dt_m.getLatestReturn());
