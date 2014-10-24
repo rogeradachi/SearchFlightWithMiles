@@ -32,7 +32,7 @@ public class FileStream {
 
 			writeHeader(writer, fare);
 			for (FlightDetails flight : flightList) {
-				writer.println(company.getValue() + ";"  + flight.toString());
+				writer.println(company.getValue() + ";"  + flight.csvString());
 			}
 			writer.close();
 		} catch (IOException e) {

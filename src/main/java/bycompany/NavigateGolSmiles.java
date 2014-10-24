@@ -50,7 +50,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		return match;
 	}
 	
-	public ArrayList<FlightMatches> doSearchSmiles() throws FileNotFoundException, UnsupportedEncodingException{
+	public ArrayList<FlightMatches> searchSmiles() throws FileNotFoundException, UnsupportedEncodingException{
 		trip_m = new TripManager(Company.GOL);
 		firstLoopSmiles();
 		

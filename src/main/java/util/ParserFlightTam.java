@@ -1,13 +1,24 @@
 package util;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Locale;
 
 import model.FlightDetails;
+import model.SearchFilter;
+import navigation.DateManager;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+
+import bycompany.Ids;
 import enums.NationalAirports;
 
 public class ParserFlightTam {
+	private static final String NAO_EXISTE = "-----";
+	
 	public static FlightDetails parseTo(String flightCode, Calendar departureTime, Calendar arriveTime, String timeUntilDestination, String amountLine,
 			NationalAirports from, NationalAirports to) {
 		FlightDetails details = new FlightDetails();
@@ -89,4 +100,6 @@ public class ParserFlightTam {
 
 		return calendar;
 	}
+	
+	
 }

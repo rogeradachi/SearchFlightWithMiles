@@ -6,6 +6,7 @@ import java.util.Calendar;
 import enums.NationalAirports;
 
 public class FlightDetails implements Comparable<FlightDetails> {
+	private SimpleDateFormat f = new SimpleDateFormat("dd/MM HH'h'mm");
 	private NationalAirports originAirport;
 	private NationalAirports destinationAirport;
 	private String flightCode;
@@ -86,11 +87,8 @@ public class FlightDetails implements Comparable<FlightDetails> {
 		this.flightTime = flightTime;
 		return this;
 	}
-
-	@Override
-	public String toString() {
-		SimpleDateFormat f = new SimpleDateFormat("dd/MM HH'h'mm");
-		
+	
+	public String csvString(){
 		return flightCode + ";" + this.getOriginAirport().code() + ";" + this.getDestinationAirport().code() + ";" + amount + ";" + flightDuration + ";" + stopOvers + ";" + f.format(flightTime.getTime()) + ";"
 				+ f.format(arriveTime.getTime());
 	}

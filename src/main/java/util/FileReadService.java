@@ -114,7 +114,6 @@ public class FileReadService {
 		BufferedReader br = null;
 		Calendar departure = Calendar.getInstance();
 		Calendar return_ = Calendar.getInstance();
-		Calendar startWindow = Calendar.getInstance();
 		Calendar endWindow = Calendar.getInstance();
 
 		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", new Locale("pt-BR"));
@@ -131,13 +130,12 @@ public class FileReadService {
 
 			departure.setTime(sdf.parse(mapping.get("departure")));
 			return_.setTime(sdf.parse(mapping.get("return")));
-			startWindow.setTime(dt.parse(mapping.get("startWindow")));
 			endWindow.setTime(dt.parse(mapping.get("endWindow")));
 			int jumpDays = Integer.parseInt(mapping.get("jumpDays"));
 
 			dt_m.setEarliestDeparture(departure);
 			dt_m.setLatestReturn(return_);
-			dt_m.setStartWindowDate(startWindow);
+			dt_m.setStartWindowDate((Calendar) departure.clone());
 			dt_m.setEndWindowDate(endWindow.get(Calendar.DAY_OF_MONTH), endWindow.get(Calendar.MONTH), endWindow.get(Calendar.YEAR));
 			dt_m.setJumpDays(jumpDays);
 

@@ -35,6 +35,9 @@ public class Ids {
 	public static String multiPlusSubmitFirstxPath = ".//*[@id='onlineSearchSubmitButton']";
 	public static String multiPlusResultTableFlightxPath = ".//*[@id='outbound_list_flight_direct']/tbody";
 	public static String multiPlusResultTableReturnsxPath = ".//*[@id='inbound_list_flight_direct']/tbody";
+	public static String multiPlusCalendarChoice_OKxpath = "id('ui-datepicker-div')/x:div[4]/x:button[2]";
+	public static String multiPlusSubmitLoopxpath = ".//*[@id='searchPanel']/footer/button";
 	public static String multiPlusFlight_CSS = ".flight";
 	public static String multiPlusTD_CSS = "td";
+	public static String multiPlusFrameLojinha = "lojinha";
 }

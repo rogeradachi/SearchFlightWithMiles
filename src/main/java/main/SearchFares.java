@@ -13,13 +13,14 @@ import model.SearchFilter;
 import navigation.DateManager;
 import navigation.TripManager;
 import util.FileReadService;
+import util.FileStream;
 import bycompany.NavigateGolSmiles;
 import bycompany.NavigateTamMultiplus;
 import enums.Company;
 
 public class SearchFares {
 	
-	protected @Inject NavigateTamMultiplus multiplus;
+	
 
 	protected @Inject DateManager dt_m;
 	protected @Inject TripManager trip_m;
@@ -30,6 +31,7 @@ public class SearchFares {
 	private ArrayList<FlightDetails> bestFares;
 	private HashMap<String, FlightMatches> resultMatches;
 	private NavigateGolSmiles smiles;
+	protected @Inject NavigateTamMultiplus multiplus;
 
 	public SearchFares() {
 		dt_m = FileReadService.readDates();
@@ -39,12 +41,12 @@ public class SearchFares {
 		matches = new ArrayList<FlightMatches>();
 		resultMatches = new HashMap<String, FlightMatches>();
 	}
-
-	/**
-	 * Simply reset the flying dates and prepare for another iteraction
-	 */
-	private void resetCalendar() {
-		dt_m.resetFlightDates();
+	
+	private void outputResults() throws FileNotFoundException, UnsupportedEncodingException {
+		for (String from_to : this.resultMatches.keySet()) {
+			FlightMatches matches = resultMatches.get(from_to);
+			FileStream.outputResults(matches.bestFares(), matches.from, matches.to, Company.TAM,  flt.getFareType());
+		}
 	}
 	
 	private void endOrganizeResults(){
@@ -58,10 +60,14 @@ public class SearchFares {
 		}
 	}
 
-	private void doSearchMultiplus() {
+	private void doSearchMultiplus() throws FileNotFoundException, UnsupportedEncodingException {
 		trip_m = new TripManager(Company.TAM);
 		
 		NavigateTamMultiplus multiplus = new NavigateTamMultiplus(urls, flt, trip_m, dt_m);
+		matches.addAll(multiplus.searchMultiplus());
+		addMatches();
+		
+		outputResults();
 	}
 	
 	private void addMatches() {
@@ -84,14 +90,15 @@ public class SearchFares {
 		
 		NavigateGolSmiles smiles = new NavigateGolSmiles(urls,flt, trip_m, dt_m);
 		matches.add(smiles.firstLoopSmiles());
-		matches.addAll(smiles.doSearchSmiles());
+		matches.addAll(smiles.searchSmiles());
 		addMatches();
 	}
 
 	public static void main(String[] args) {
 		SearchFares src = new SearchFares();
 			try {
-				src.doSearchSmiles();
+				//src.doSearchSmiles();
+				src.doSearchMultiplus();
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
