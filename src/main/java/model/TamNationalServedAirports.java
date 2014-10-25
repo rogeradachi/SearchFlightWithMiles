@@ -1,4 +1,4 @@
-package bycompany;
+package model;
 
 import enums.Company;
 import util.FileReadService;

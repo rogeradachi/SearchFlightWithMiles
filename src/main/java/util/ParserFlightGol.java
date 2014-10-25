@@ -27,11 +27,33 @@ public class ParserFlightGol {
 		if (amount > 0) {
 			details.setFlightCode(extractGolCode(flightCode)).setFlightTime(leaveFlight.getExtractedDate()).setArriveTime(arriveFlight.getExtractedDate())
 					.setFlightDuration(stops[1]).setAmount(amount).setOriginAirport(leaveFlight.getAirport()).setDestinationAirport(arriveFlight.getAirport())
-					.setStopOvers(stops[0]);
+					.setStopOvers(stops[0]).setCompany(Company.GOL.toString());
 			return details;
 		} else {
 			return null;
 		}
+	}
+	
+	
+	
+	public static String cheapestFare(String [] fares){
+		int [] amount = new int[fares.length];
+		Integer cheapest= -1;
+		for (int i = 0; i < fares.length; i++) {
+			amount[i] = getGolAmount(fares[i]);
+			if(amount[i] > 0){
+				if(cheapest == -1){
+					cheapest = amount[i];
+				}
+				else{
+					if(cheapest > amount[i]){
+						cheapest = amount[i];
+					}
+				}
+			}
+		}
+		
+		return cheapest.toString();
 	}
 
 	private static String extractGolCode(String flightCode) {
@@ -88,6 +110,9 @@ public class ParserFlightGol {
 	}
 
 	private static int getGolAmount(String value) {
+		if(value == null || value.length() == 0){
+			return -1;
+		}
 		value = value.trim();
 		if (value.contains("MILHAS REDUZIDAS")) {
 			value = value.split("\\r?\\n")[1];
@@ -102,4 +127,4 @@ public class ParserFlightGol {
 			return Integer.parseInt(value);
 		}
 	}
-}
+}	

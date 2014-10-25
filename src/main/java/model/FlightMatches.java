@@ -8,23 +8,13 @@ import enums.NationalAirports;
 public class FlightMatches {
 	private SearchFilter flt;
 
-	private String company;
-
 	public NationalAirports from;
 	public NationalAirports to;
 
 	private ArrayList<FlightDetails> bestFares;
 	private ArrayList<FlightSingleResult> listResults;
 
-	public String getCompany() {
-		return company;
-	}
-
-	public void setCompany(String company) {
-		this.company = company;
-	}
-
-	public FlightMatches(SearchFilter fr_m, NationalAirports from, NationalAirports to) {
+	public FlightMatches(SearchFilter fr_m, NationalAirports from, NationalAirports to, String company) {
 		listResults = new ArrayList<FlightSingleResult>();
 		this.from = from;
 		this.to = to;
@@ -56,7 +46,7 @@ public class FlightMatches {
 				}
 			}
 		}
-		this.sortMatches(bestList);
+		this.bestFares = this.sortMatches(bestList);
 
 		return bestList;
 	}
@@ -82,7 +72,7 @@ public class FlightMatches {
 	public FlightDetails mergeFlightDetails(FlightDetails departureFlight, FlightDetails returnFlight) {
 		FlightDetails merged = new FlightDetails();
 
-		merged.setAmount(departureFlight.getAmount() + returnFlight.getAmount()).setOriginAirport(departureFlight.getOriginAirport()).setDestinationAirport(departureFlight.getDestinationAirport())
+		merged.setCompany(departureFlight.getCompany()).setAmount(departureFlight.getAmount() + returnFlight.getAmount()).setOriginAirport(departureFlight.getOriginAirport()).setDestinationAirport(departureFlight.getDestinationAirport())
 				.setFlightCode(departureFlight.getFlightCode() + " \\ " + returnFlight.getFlightCode()).setArriveTime(returnFlight.getArriveTime())
 				.setFlightTime(departureFlight.getFlightTime()).setStopOvers(departureFlight.getStopOvers() + " \\ " + returnFlight.getStopOvers()).setFlightDuration(departureFlight.getFlightDuration() + " \\ " + returnFlight.getFlightDuration());
 
@@ -137,7 +127,7 @@ public class FlightMatches {
 		this.listResults = listResults;
 	}
 	
-	public void addListResults(ArrayList<FlightSingleResult> listResults){
+	public void addAllListResults(ArrayList<FlightSingleResult> listResults){
 		this.listResults.addAll(listResults);
 	}
 	

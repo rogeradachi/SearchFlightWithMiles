@@ -14,6 +14,7 @@ import model.FlightMatches;
 import model.FlightSingleResult;
 import model.Login;
 import model.SearchFilter;
+import model.SearchToolInstance;
 import model.Trip;
 import navigation.DateManager;
 import navigation.TripManager;
@@ -22,9 +23,11 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebElement;
 
 import util.FileReadService;
+import util.Help;
 import util.ParserFlightGol;
 import conditional.WaitCondition;
 import enums.Company;
+import enums.Ids;
 
 public class NavigateGolSmiles extends SearchToolInstance {
 	private static final String SMILES = "smiles";
@@ -38,28 +41,27 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		smilesLogin = FileReadService.readPersonalDetailsFromFile();
 	}
 	
-	public FlightMatches firstLoopSmiles() throws FileNotFoundException, UnsupportedEncodingException{
+	private FlightMatches firstLoopSmiles() throws FileNotFoundException, UnsupportedEncodingException{
 		this.loginUserSpace();
 		
 		Trip trip = trip_m.next();
 		
-		FlightMatches match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
+		FlightMatches match = new FlightMatches(flt, trip.fromObj(), trip.toObj(), Company.GOL.toString());
 		match.addListResults(this.searchFlightsFirstLoop(trip));
-		match.addListResults(this.loopSearchFlights(trip));
+		match.addAllListResults(this.loopSearchFlights(trip));
 		
 		return match;
 	}
 	
 	public ArrayList<FlightMatches> searchSmiles() throws FileNotFoundException, UnsupportedEncodingException{
-		trip_m = new TripManager(Company.GOL);
-		firstLoopSmiles();
-		
 		ArrayList<FlightMatches> matches = new ArrayList<FlightMatches>();
 		FlightMatches match;
 		
+		matches.add(this.firstLoopSmiles());
+		
 		Trip trip = trip_m.next();
 		while(trip != null){
-			match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
+			match = new FlightMatches(flt, trip.fromObj(), trip.toObj(), Company.GOL.toString());
 			match.getListResults().addAll(this.loopSearchFlights(trip));
 			
 			matches.add(match);
@@ -67,6 +69,12 @@ public class NavigateGolSmiles extends SearchToolInstance {
 			dt_m.resetFlightDates();
 			trip = trip_m.next();
 		}
+		
+		if(matches.size() == 0){
+			return null;
+		}
+		
+		this.closeDriver();
 		
 		return matches;
 	}
@@ -172,7 +180,8 @@ public class NavigateGolSmiles extends SearchToolInstance {
 
 		for (WebElement webElement : departures) {
 			WebElement flightDetails = webElement.findElement(By.cssSelector(Ids.CONTENT_FLIGHT_CSS));
-			WebElement flightPrice = webElement.findElement(By.cssSelector(Ids.CONTENT_TARIFAS_CSS));
+						
+			String fare = this.extractInternationalFares(webElement);
 			// TODO: verificar o conflitos de datas fixas do voo de partida e
 			// chegada (podem ocorrer em dias diferentes e consequentemnte em
 			// anos diferentes)
@@ -181,7 +190,7 @@ public class NavigateGolSmiles extends SearchToolInstance {
 			String code = flightDetails.findElement(By.cssSelector(Ids.Flight_Code_CSS)).getText();
 			String duration = flightDetails.findElement(By.cssSelector(Ids.FlyingTime_CSS)).getText();
 
-			FlightDetails flight = ParserFlightGol.parseTo(leave, arrive, flightTime, code, duration, flightPrice.getText());
+			FlightDetails flight = ParserFlightGol.parseTo(leave, arrive, flightTime, code, duration, fare);
 			if (flight != null) {
 				listaFlights.add(flight);
 			}
@@ -217,5 +226,26 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		WaitCondition.waitFrameLoaded(driver, Ids.golViewFrame);
 		// driver = driver.switchTo().frame("_sweview"); // to the main view
 		// frame
+	}
+	
+	private String extractInternationalFares(WebElement element){
+		String [] fares; 
+		
+		WebElement classes = Help.checkPresence(element, By.cssSelector(Ids.golClasseTarifaria_CSS));
+		if( classes != null){
+			/* Has different class seats*/			
+			List<WebElement> flights = Help.fluentWaitElements(element, By.cssSelector(Ids.golFaresSmiles_CSS));
+			fares = new String[flights.size()];
+			
+			for (int i = 0; i < flights.size(); i++) {
+				WebElement fare = flights.get(i);
+				fares[i] = fare.getText();
+			}
+			return ParserFlightGol.cheapestFare(fares);
+		}
+		else{
+			WebElement fare = element.findElement(By.cssSelector(Ids.CONTENT_TARIFAS_CSS));
+			return fare.getText();
+		}
 	}
 }

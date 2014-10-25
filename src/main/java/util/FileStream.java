@@ -23,7 +23,7 @@ import enums.FileName;
 import enums.NationalAirports;
 
 public class FileStream {
-	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to, Company company, FareType fare) throws FileNotFoundException,
+	public static void outputResults(ArrayList<FlightDetails> flightList, NationalAirports from, NationalAirports to, FareType fare) throws FileNotFoundException,
 			UnsupportedEncodingException {
 		PrintWriter writer;
 		try {
@@ -32,7 +32,7 @@ public class FileStream {
 
 			writeHeader(writer, fare);
 			for (FlightDetails flight : flightList) {
-				writer.println(company.getValue() + ";"  + flight.csvString());
+				writer.println(flight.getCompany() + ";" + flight.csvString());
 			}
 			writer.close();
 		} catch (IOException e) {

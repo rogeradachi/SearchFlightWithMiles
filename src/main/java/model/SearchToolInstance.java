@@ -1,4 +1,4 @@
-package bycompany;
+package model;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -6,10 +6,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import model.FlightDetails;
-import model.FlightSingleResult;
-import model.SearchFilter;
-import model.Trip;
 import navigation.DateManager;
 import navigation.TripManager;
 
@@ -67,24 +63,30 @@ public abstract class SearchToolInstance {
 			WaitCondition.waitElementClicable(xpath, driver);
 			this.actionClickElement(xpath);
 		}
-	}	
+	}
 
 	protected void actionClickElement(String xpath) {
 		driver.findElement(By.xpath(xpath)).click();
 	}
 
-	protected void initializeDriver() {
+	public void initializeDriver() {
 		if (url != null) {
 			driver = new FirefoxDriver();
-			driver.manage().timeouts().implicitlyWait(15, TimeUnit.SECONDS);
+			// driver.manage().timeouts().implicitlyWait(15, TimeUnit.SECONDS);
 			driver.get(url);
 		}
 		WaitCondition.waitPageLoaded(driver);
 	}
-	
-//	public void closeDriver(){
-//		if(driver != null)
-//			driver.close();
-//	}
+
+	public void closeDriver() {
+		if (driver != null) {
+			driver.close();
+		}
+	}
+
+	// public void closeDriver(){
+	// if(driver != null)
+	// driver.close();
+	// }
 
 }

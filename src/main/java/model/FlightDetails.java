@@ -7,6 +7,7 @@ import enums.NationalAirports;
 
 public class FlightDetails implements Comparable<FlightDetails> {
 	private SimpleDateFormat f = new SimpleDateFormat("dd/MM HH'h'mm");
+	private String company;
 	private NationalAirports originAirport;
 	private NationalAirports destinationAirport;
 	private String flightCode;
@@ -15,6 +16,15 @@ public class FlightDetails implements Comparable<FlightDetails> {
 	private String stopOvers;
 	private Calendar arriveTime;
 	private Calendar flightTime;
+
+	public String getCompany() {
+		return company;
+	}
+
+	public FlightDetails setCompany(String company) {
+		this.company = company;
+		return this;
+	}
 
 	public NationalAirports getOriginAirport() {
 		return originAirport;

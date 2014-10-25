@@ -1,17 +1,20 @@
-package bycompany;
+package enums;
 
 public class Ids {
 	public static String golSubmitLoopSearch = "id('search')/div[3]/a";
-	public static String FlyingTime_CSS = ".duracao-voo";
-	public static String Flight_Code_CSS = ".voo-titulo";
-	public static String Fligh_Inbound_CSS = ".chegada-voo";
-	public static String Flight_Outbound_CSS = ".saida-voo";
-	public static String CONTENT_TARIFAS_CSS = ".contentTarifas";
-	public static String CONTENT_FLIGHT_CSS = ".contentFlight";
+	public static String FlyingTime_CSS = "div.duracao-voo";
+	public static String Flight_Code_CSS = "div.voo-titulo";
+	public static String Fligh_Inbound_CSS = "div.chegada-voo";
+	public static String Flight_Outbound_CSS = "div.saida-voo";
+	public static String CONTENT_TARIFAS_CSS = "div.contentTarifas";
+	public static String golClasseTarifaria_CSS = "div.classe-tarifaria";
+	public static String golFaresSmiles_CSS = "div.fareSmilesClick";
+	public static String CONTENT_FLIGHT_CSS = "div.contentFlight";
 	public static String golDropDownListDestination = "id('fs_popUp_destinations[0]')/ul/li";
 	public static String golDropDownListOrigin = "id('fs_popUp_origins[0]')/ul/li";
 	public static String golResultsDeparture = "id('site')/div[6]/div[3]/div";
 	public static String golResultsReturn = "id('site')/div[7]/div[3]/div";
+	public static String golIntFlightCategory_CSS = "div.classe-tarifaria";
 	public static String golSubmitFirstSearch = "id('toCategory')/a";
 	public static String golInputReturnDay = "id('datepickerInputVolta')";
 	public static String golInputTripDay = "id('datepickerInputIda')";
@@ -40,4 +43,5 @@ public class Ids {
 	public static String multiPlusFlight_CSS = ".flight";
 	public static String multiPlusTD_CSS = "td";
 	public static String multiPlusFrameLojinha = "lojinha";
+	
 }

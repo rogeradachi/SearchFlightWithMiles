@@ -1,9 +1,9 @@
 package bycompany;
+import model.GolNationalServedAirports;
+import model.ServedAirports;
+import model.TamNationalServedAirports;
 import enums.Company;
 import enums.NationalAirports;
-import bycompany.ServedAirports;
-import bycompany.GolNationalServedAirports;
-import bycompany.TamNationalServedAirports;
 
 public class RestrictionFactory {
 	private ServedAirports served;

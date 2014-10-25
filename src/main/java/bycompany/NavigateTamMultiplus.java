@@ -10,7 +10,9 @@ import java.util.List;
 import model.FlightDetails;
 import model.FlightMatches;
 import model.FlightSingleResult;
+import model.MultiplusExtract;
 import model.SearchFilter;
+import model.SearchToolInstance;
 import model.Trip;
 import navigation.DateManager;
 import navigation.TripManager;
@@ -23,10 +25,9 @@ import util.Help;
 import util.ParserFlightTam;
 import conditional.WaitCondition;
 import enums.Company;
-import enums.NationalAirports;
+import enums.Ids;
 
 public class NavigateTamMultiplus extends SearchToolInstance {
-	private static final String NAO_EXISTE = "-----";
 
 	public NavigateTamMultiplus(HashMap<String, String> urls, SearchFilter flt, TripManager trip_m, DateManager dt_m) {
 		this.url = urls.get("multiplus");
@@ -47,9 +48,9 @@ public class NavigateTamMultiplus extends SearchToolInstance {
 
 		Trip trip = trip_m.next();
 
-		FlightMatches match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
+		FlightMatches match = new FlightMatches(flt, trip.fromObj(), trip.toObj(), Company.TAM.toString());
 		match.addListResults(this.searchFlightsFirstLoop(trip));
-		match.addListResults(this.loopSearchFlights(trip));
+		match.addAllListResults(this.loopSearchFlights(trip));
 
 		return match;
 	}
@@ -63,14 +64,15 @@ public class NavigateTamMultiplus extends SearchToolInstance {
 
 		Trip trip = trip_m.next();
 		while (trip != null) {
-			match = new FlightMatches(flt, trip.fromObj(), trip.toObj());
+			match = new FlightMatches(flt, trip.fromObj(), trip.toObj(), Company.TAM.toString());
 			match.getListResults().addAll(this.loopSearchFlights(trip));
-
 			matches.add(match);
 
 			dt_m.resetFlightDates();
 			trip = trip_m.next();
 		}
+
+		this.closeDriver();
 
 		return matches;
 	}
@@ -96,17 +98,17 @@ public class NavigateTamMultiplus extends SearchToolInstance {
 	public ArrayList<FlightSingleResult> loopSearchFlights(Trip trip) {
 		WaitCondition.waitElementClicable(Ids.multiPlusOriginxPath, driver);
 
-		inputAirportMultiplus(Ids.multiPlusOriginxPath, Ids.multiPlusDestinationxPath, trip);		
+		inputAirportMultiplus(Ids.multiPlusOriginxPath, Ids.multiPlusDestinationxPath, trip);
 		ArrayList<FlightSingleResult> results = this.loopDates(trip, dt_m, flt);
 
 		return results;
 	}
-	
+
 	private void inputAirportMultiplus(String xpathFrom, String xpathTo, Trip trip) {
 		WebElement departure = driver.findElement(By.xpath(xpathFrom));
 		departure.click();
 		departure.sendKeys(trip.from());
-		
+
 		WebElement return_ = driver.findElement(By.xpath(xpathTo));
 		return_.click();
 		return_.sendKeys(trip.to());
@@ -170,48 +172,31 @@ public class NavigateTamMultiplus extends SearchToolInstance {
 			String delTo = Keys.chord(Keys.CONTROL, "a") + Keys.DELETE;
 			dtInputTo.sendKeys(delTo + format.format(dt_m.getLatestReturn().getTime()));
 		}
-		if (Help.exists(driver, Ids.multiPlusCalendarChoice_OKxpath)) {
+		if (Help.checkPresence(driver, By.xpath(Ids.multiPlusCalendarChoice_OKxpath)) != null) {
 			this.actionClickElement(Ids.multiPlusCalendarChoice_OKxpath);
 		}
 	}
-	
-	public ArrayList<FlightDetails> extractFlightsInfo(List<WebElement> infoTR, Calendar dt_m, SearchFilter flt){
+
+	public ArrayList<FlightDetails> extractFlightsInfo(List<WebElement> infoTR, Calendar date, SearchFilter flt) {
 		ArrayList<FlightDetails> infos = new ArrayList<FlightDetails>();
-		
+
 		for (WebElement webElement : infoTR) {
 			List<WebElement> outboundsTD = webElement.findElements(By.cssSelector(Ids.multiPlusTD_CSS));
 
-			String[] detailsOutbound = ParserFlightTam.extractAirportAndFlightTimeMultiPlus(outboundsTD.get(0).getText());// saida
-			String[] detailsInbound = ParserFlightTam.extractAirportAndFlightTimeMultiPlus(outboundsTD.get(1).getText());// chegada
+			MultiplusExtract origin = ParserFlightTam.extractAirportAndFlightTimeMultiPlus(outboundsTD.get(0).getText(), date);// saida
+			MultiplusExtract destination = ParserFlightTam.extractAirportAndFlightTimeMultiPlus(outboundsTD.get(1).getText(), date);// chegada
+
 			String code = outboundsTD.get(2).getText();// codigo do voo
 			String duration = outboundsTD.get(3).getText();// duração
-			/* milhas PROMO*/
-			String milesPromo = ParserFlightTam.extractFaresMultiPlus(outboundsTD.get(4).getText());
+			String fare = ParserFlightTam.parseCheapestFare(outboundsTD, flt.getLimit()); //a melhor categoria de milhas
 
-			String milesClassico = NAO_EXISTE;
-			String milesIrrestrito = NAO_EXISTE;
-			if (outboundsTD.size() > 5) {
-				/* milhas clássico */
-				milesClassico = ParserFlightTam.extractFaresMultiPlus(outboundsTD.get(5).getText());
-				if (outboundsTD.size() > 6) {
-					/* milhas Irrestrito */
-					milesIrrestrito = ParserFlightTam.extractFaresMultiPlus(outboundsTD.get(6).getText());
-				}
-			}
-
-			String fare = ParserFlightTam.cheapestFare(milesPromo, milesClassico, milesIrrestrito, flt.getLimit());
-			Calendar outbound = ParserFlightTam.convertCalendar(detailsOutbound[0], dt_m.get(Calendar.DATE), dt_m.get(Calendar.MONTH),
-					dt_m.get(Calendar.YEAR));
-			Calendar inbound = ParserFlightTam.convertCalendar(detailsInbound[0], dt_m.get(Calendar.DATE), dt_m.get(Calendar.MONTH),
-					dt_m.get(Calendar.YEAR));
-
-			FlightDetails flight = ParserFlightTam.parseTo(code, outbound, inbound, duration, fare, NationalAirports.valueOf(detailsOutbound[1]),
-					NationalAirports.valueOf(detailsInbound[1]));
+			FlightDetails flight = ParserFlightTam.parseTo(code, origin.getTime(), destination.getTime(), duration.replace(":", "H"), fare, origin.getAirport(), destination.getAirport(), "0");
+			
 			if (flight != null) {
 				infos.add(flight);
 			}
 		}
-		
+
 		return infos;
 	}
 }
