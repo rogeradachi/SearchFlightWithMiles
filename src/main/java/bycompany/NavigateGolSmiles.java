@@ -234,12 +234,12 @@ public class NavigateGolSmiles extends SearchToolInstance {
 		WebElement classes = Help.checkPresence(element, By.cssSelector(Ids.golClasseTarifaria_CSS));
 		if( classes != null){
 			/* Has different class seats*/			
-			List<WebElement> flights = Help.fluentWaitElements(element, By.cssSelector(Ids.golFaresSmiles_CSS));
+			List<WebElement> flights = element.findElements(By.cssSelector(Ids.golFaresSmiles_CSS));
 			fares = new String[flights.size()];
 			
 			for (int i = 0; i < flights.size(); i++) {
 				WebElement fare = flights.get(i);
-				fares[i] = fare.getText();
+				fares[i] = fare.getAttribute("fare");
 			}
 			return ParserFlightGol.cheapestFare(fares);
 		}

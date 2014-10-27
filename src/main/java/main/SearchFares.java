@@ -92,7 +92,7 @@ public class SearchFares {
 		SearchFares src = new SearchFares();
 		try {
 			src.doSearchSmiles();
-			src.doSearchMultiplus();
+			//src.doSearchMultiplus();
 			src.outputResults();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
