@@ -51,10 +51,10 @@ public class Ids {
 	public static String decolarFlightDatexPath = "//*[@id='sb-datein-flights']";
 	public static String decolarReturnDatexPath = "//*[@id='sb-dateout-flights']";
 	public static String decolarOneWayxPath = "//*[@id='sb-oneway']";
-	public static String decolarSubmitSearch = "/html/body/div[2]/div[2]/div[1]/div[1]/div[1]/div/form/div[2]/div[5]/div[2]/a";
-	public static String decolarMinFareSearch = ".//*[@id='filters-price']/div[2]/ul/li[3]/div/span[1]/label/input";
-	public static String decolarMaxFareSearch = ".//*[@id='filters-price']/div[2]/ul/li[3]/div/span[2]/label/input";
-	public static String decolarResults = ".//*[@id='clusters']";
+	public static String decolarSubmitSearchXPath = "/html/body/div[2]/div[2]/div[1]/div[1]/div[1]/div/form/div[2]/div[5]/div[2]/a";
+	public static String decolarMinFareSearchXPath = ".//*[@id='filters-price']/div[2]/ul/li[3]/div/span[1]/label/input";
+	public static String decolarMaxFareSearchXPath = ".//*[@id='filters-price']/div[2]/ul/li[3]/div/span[2]/label/input";
+	public static String decolarResultsXPath = ".//*[@id='clusters']";
 	public static String decolarTRs_CSS = "div.cluster.newCluster";
 	public static String decolarFareContainers_CSS = "div.fare-container";
 	public static String decolarIneraries_CSS = "div.itineraries";

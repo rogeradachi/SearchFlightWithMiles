@@ -1,4 +1,5 @@
 package bycompany;
+
 import model.GolNationalServedAirports;
 import model.ServedAirports;
 import model.TamNationalServedAirports;
@@ -9,10 +10,17 @@ public class RestrictionFactory {
 	private ServedAirports served;
 
 	public RestrictionFactory(Company company) {
-		if (company.getValue() == Company.GOL.getValue()) {
+		switch (company) {
+		case GOL:
 			this.served = new GolNationalServedAirports();
-		} else {
+			break;
+		case TAM:
 			this.served = new TamNationalServedAirports();
+			break;
+		case DECOLAR:
+		default:
+			this.served = new TamNationalServedAirports();
+			break;
 		}
 	}
 

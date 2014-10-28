@@ -14,6 +14,7 @@ import navigation.DateManager;
 import navigation.TripManager;
 import util.FileReadService;
 import util.FileStream;
+import bycompany.NavigateDecolar;
 import bycompany.NavigateGolSmiles;
 import bycompany.NavigateTamMultiplus;
 import enums.Company;
@@ -28,9 +29,9 @@ public class SearchFares {
 	private ArrayList<FlightMatches> matches;
 	private ArrayList<FlightDetails> bestFares;
 	private HashMap<String, FlightMatches> resultMatches;
-	private NavigateGolSmiles smiles;
 	protected @Inject NavigateTamMultiplus multiplus;
-
+	
+	
 	public SearchFares() {
 		dt_m = FileReadService.readDates();
 		flt = FileReadService.readSearchType();
@@ -78,6 +79,15 @@ public class SearchFares {
 			}
 		}
 	}
+	
+	public void doSearchDecolar() throws FileNotFoundException, UnsupportedEncodingException {
+		trip_m = new TripManager(Company.DECOLAR);
+
+		NavigateDecolar decolar = new NavigateDecolar(urls, flt, trip_m, dt_m);
+		ArrayList<FlightMatches> decolarMatches = new ArrayList<FlightMatches>();
+		decolarMatches.addAll(decolar.searchDecolar());
+		addMatches(decolarMatches);
+	}
 
 	public void doSearchSmiles() throws FileNotFoundException, UnsupportedEncodingException {
 		trip_m = new TripManager(Company.GOL);
@@ -91,8 +101,9 @@ public class SearchFares {
 	public static void main(String[] args) {
 		SearchFares src = new SearchFares();
 		try {
-			src.doSearchSmiles();
+			//src.doSearchSmiles();
 			//src.doSearchMultiplus();
+			src.doSearchDecolar();
 			src.outputResults();
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block

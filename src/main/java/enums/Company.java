@@ -1,7 +1,7 @@
 package enums;
 
 public enum Company {
-	TAM("Tam"), GOL("Gol");
+	TAM("Tam"), GOL("Gol"), DECOLAR("Decolar");
 	
 	private String value;
 	
